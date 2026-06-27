@@ -397,61 +397,166 @@ body {
 }
 
 /* ============================================================
-   SECTIONS
+   SECTIONS SHARED
    ============================================================ */
 section { padding: 6rem 3rem; background: var(--bg); transition: background 0.5s; }
-#work { background: var(--surface); }
+#work { background: var(--surface); padding: 0; }
+#beliefs { background: var(--bg); }
 
 .section-label {
   font-family: var(--mono);
-  font-size: 0.72rem;
-  letter-spacing: 0.1em;
+  font-size: 0.7rem;
+  letter-spacing: 0.12em;
   color: var(--accent);
-  margin-bottom: 3rem;
+  margin-bottom: 2.5rem;
   text-transform: uppercase;
 }
 
-.role-section { display: none; }
-.role-section.visible { display: block; }
+/* ============================================================
+   TRACK RECORD
+   ============================================================ */
+.track-header {
+  padding: 4rem 3rem 0;
+  background: var(--surface);
+  transition: background 0.5s;
+}
 
-.exp-grid {
+.track-cols {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  grid-template-columns: 220px 1fr 200px;
   gap: 2rem;
-}
-
-.exp-item {
   border-top: 1px solid var(--border);
-  padding-top: 1.5rem;
-  display: grid;
-  grid-template-columns: 90px 1fr;
-  gap: 1.5rem;
-  transition: border-color 0.5s;
-}
-
-.exp-year {
+  padding: 0.8rem 0;
   font-family: var(--mono);
-  font-size: 0.68rem;
-  color: var(--accent);
-  letter-spacing: 0.05em;
-  padding-top: 0.2rem;
-}
-
-.exp-body h3 { font-size: 1.05rem; font-weight: 700; margin-bottom: 0.3rem; }
-.exp-company { font-size: 0.78rem; color: var(--accent); margin-bottom: 0.7rem; }
-.exp-body p { font-size: 0.85rem; color: var(--muted); line-height: 1.65; }
-
-.exp-tags { display: flex; flex-wrap: wrap; gap: 0.35rem; margin-top: 1rem; }
-.exp-tags span {
-  font-size: 0.68rem;
-  font-weight: 600;
-  letter-spacing: 0.05em;
-  padding: 0.2rem 0.6rem;
-  border: 1px solid var(--border);
-  border-radius: 50px;
+  font-size: 0.65rem;
+  letter-spacing: 0.1em;
   color: var(--muted);
   text-transform: uppercase;
   transition: border-color 0.5s;
+}
+
+.track-list { background: var(--surface); transition: background 0.5s; }
+
+.track-item {
+  display: grid;
+  grid-template-columns: 220px 1fr 200px;
+  gap: 2rem;
+  border-top: 1px solid var(--border);
+  padding: 3rem;
+  transition: background 0.2s, border-color 0.5s;
+}
+.track-item:hover { background: rgba(245,166,35,0.03); }
+
+.track-left { padding-top: 0.2rem; }
+
+.track-year {
+  font-family: var(--mono);
+  font-size: 0.7rem;
+  color: var(--accent);
+  letter-spacing: 0.08em;
+  display: block;
+  margin-bottom: 0.6rem;
+  border-left: 2px solid var(--accent);
+  padding-left: 0.7rem;
+}
+
+.track-company {
+  font-size: 1.3rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: var(--text);
+  margin-bottom: 0.3rem;
+  line-height: 1.2;
+  transition: color 0.5s;
+}
+
+.track-role {
+  font-family: var(--mono);
+  font-size: 0.65rem;
+  letter-spacing: 0.1em;
+  color: var(--muted);
+  text-transform: uppercase;
+}
+
+.track-mid {
+  font-size: 0.88rem;
+  color: var(--muted);
+  line-height: 1.75;
+  padding-top: 0.2rem;
+  transition: color 0.5s;
+}
+
+.track-right {
+  display: flex;
+  align-items: flex-start;
+  justify-content: flex-end;
+  padding-top: 0.3rem;
+}
+
+.impact-tag {
+  font-family: var(--mono);
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  padding: 0.4rem 0.8rem;
+  border: 1px solid var(--border);
+  color: var(--muted);
+  white-space: nowrap;
+  transition: border-color 0.5s, color 0.2s;
+}
+.track-item:hover .impact-tag {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+/* ============================================================
+   BELIEFS
+   ============================================================ */
+.beliefs-inner {
+  display: grid;
+  grid-template-columns: 300px 1fr;
+  gap: 4rem;
+  align-items: start;
+}
+
+.beliefs-headline {
+  font-size: clamp(1.6rem, 3vw, 2.4rem);
+  font-weight: 800;
+  line-height: 1.2;
+  letter-spacing: -0.03em;
+  color: var(--text);
+  margin-top: 1rem;
+  transition: color 0.5s;
+}
+
+.beliefs-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 2.5rem;
+}
+
+.belief-item { padding-top: 0.5rem; }
+
+.belief-icon {
+  font-size: 1.4rem;
+  display: block;
+  margin-bottom: 0.8rem;
+}
+
+.belief-item h4 {
+  font-family: var(--mono);
+  font-size: 0.7rem;
+  letter-spacing: 0.12em;
+  color: var(--text);
+  margin-bottom: 0.6rem;
+  transition: color 0.5s;
+}
+
+.belief-item p {
+  font-size: 0.85rem;
+  color: var(--muted);
+  line-height: 1.65;
 }
 
 /* ============================================================
@@ -599,6 +704,15 @@ footer {
 /* ============================================================
    RESPONSIVE
    ============================================================ */
+@media (max-width: 900px) {
+  .track-cols { display: none; }
+  .track-item { grid-template-columns: 1fr; gap: 1rem; padding: 2rem 1.5rem; }
+  .track-right { justify-content: flex-start; }
+  .beliefs-inner { grid-template-columns: 1fr; gap: 2rem; }
+  .beliefs-grid { grid-template-columns: 1fr; }
+  .track-header { padding: 3rem 1.5rem 0; }
+}
+
 @media (max-width: 768px) {
   #nav { padding: 0.9rem 1.2rem; }
   .nav-links { display: none; }
@@ -606,6 +720,5 @@ footer {
   .hero-left { max-width: 100%; padding: 0 1.5rem; }
   .hero-right { display: none; }
   section { padding: 4rem 1.5rem; }
-  .exp-item { grid-template-columns: 1fr; }
   footer { flex-direction: column; gap: 0.5rem; padding: 1.2rem 1.5rem; }
 }
