@@ -3,7 +3,7 @@
    ============================================================ */
 
 /* ============================================================
-   THREE.JS — GLB CHARACTER (walk in place, mirrored)
+   THREE.JS — FBX CHARACTER (walk in place, mirrored)
    ============================================================ */
 (function initCharacter() {
   const canvas = document.getElementById('threeCanvas');
@@ -13,10 +13,9 @@
   renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
   renderer.shadowMap.enabled = true;
   renderer.shadowMap.type = THREE.PCFSoftShadowMap;
-  renderer.outputEncoding = THREE.sRGBEncoding;
 
   const scene = new THREE.Scene();
-  const camera = new THREE.PerspectiveCamera(40, 1, 0.1, 500);
+  const camera = new THREE.PerspectiveCamera(42, 1, 0.1, 2000);
 
   function resize() {
     const w = canvas.parentElement.clientWidth;
@@ -29,61 +28,57 @@
   resize();
 
   /* Lights */
-  const ambient = new THREE.AmbientLight(0xffffff, 0.75);
+  const ambient = new THREE.AmbientLight(0xffffff, 0.8);
   scene.add(ambient);
   const key = new THREE.DirectionalLight(0xfff5e0, 1.6);
   key.position.set(-80, 200, 140);
   key.castShadow = true;
   key.shadow.mapSize.set(1024, 1024);
   scene.add(key);
-  const fill = new THREE.PointLight(0xf5a623, 0.7, 600);
-  fill.position.set(120, 100, 80);
+  const fill = new THREE.PointLight(0xf5a623, 0.7, 1200);
+  fill.position.set(200, 150, 150);
   scene.add(fill);
   const rim = new THREE.DirectionalLight(0x88ccff, 0.4);
   rim.position.set(80, 120, -100);
   scene.add(rim);
 
-  /* Shadow disc on ground */
+  /* Shadow disc */
   const groundDisc = new THREE.Mesh(
-    new THREE.CircleGeometry(0.35, 32),
-    new THREE.MeshBasicMaterial({ color: 0x000000, transparent: true, opacity: 0.12 })
+    new THREE.CircleGeometry(30, 32),
+    new THREE.MeshBasicMaterial({ color: 0x000000, transparent: true, opacity: 0.1 })
   );
   groundDisc.rotation.x = -Math.PI / 2;
   scene.add(groundDisc);
 
-  /* Load GLB — try local first, fall back to GitHub Pages */
   let mixer = null;
   let charGroup = null;
 
-  function onLoad(gltf) {
-    const model = gltf.scene;
+  const loader = new THREE.FBXLoader();
+  const fbxUrl = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
+    ? 'character.fbx'
+    : 'https://ellalalala30-stack.github.io/rotsen-portfolio/character.fbx';
 
-    /* Start animation first so skinned mesh bones settle into pose */
-    if (gltf.animations && gltf.animations.length > 0) {
-      mixer = new THREE.AnimationMixer(model);
-      const action = mixer.clipAction(gltf.animations[0]);
+  loader.load(fbxUrl, fbx => {
+    /* Tick animation before measuring so skeleton is in walking pose */
+    if (fbx.animations && fbx.animations.length > 0) {
+      mixer = new THREE.AnimationMixer(fbx);
+      const action = mixer.clipAction(fbx.animations[0]);
       action.setLoop(THREE.LoopRepeat, Infinity);
-      action.timeScale = 0.9;
+      action.timeScale = 0.85;
       action.play();
-      mixer.update(0.1); // advance one tick so skeleton is in bind pose
+      mixer.update(0.05);
     }
 
-    /* Shadows + materials */
-    model.traverse(child => {
+    /* Shadows + preserve existing textures */
+    fbx.traverse(child => {
       if (child.isMesh) {
         child.castShadow = true;
         child.receiveShadow = true;
-        if (child.material) {
-          const mats = Array.isArray(child.material) ? child.material : [child.material];
-          mats.forEach(m => {
-            if (m.roughness !== undefined) m.roughness = Math.min(m.roughness, 0.85);
-          });
-        }
       }
     });
 
-    /* Bounding box AFTER skeleton is in pose */
-    const box3 = new THREE.Box3().setFromObject(model);
+    /* Bounding box after pose tick */
+    const box3 = new THREE.Box3().setFromObject(fbx);
     const size   = new THREE.Vector3();
     const centre = new THREE.Vector3();
     box3.getSize(size);
@@ -91,44 +86,27 @@
     const h = size.y;
     const w = size.x;
 
-    /* Shift model so feet sit at Y=0, centred on X/Z */
-    model.position.set(-centre.x, -box3.min.y, -centre.z);
+    fbx.position.set(-centre.x, -box3.min.y, -centre.z);
 
-    /* Mirror: face left toward hero text */
+    /* Mirror on X to face left (toward hero copy) */
     charGroup = new THREE.Group();
     charGroup.scale.x = -1;
-    charGroup.add(model);
+    charGroup.add(fbx);
     scene.add(charGroup);
 
-    /* Camera: fit full character in view with a bit of breathing room */
-    const fovRad  = camera.fov * (Math.PI / 180);
-    const aspect  = camera.aspect;
-    const fitH    = (h / 2) / Math.tan(fovRad / 2); // dist to fit height
-    const fitW    = (w / 2) / Math.tan((fovRad * aspect) / 2); // dist to fit width
-    const dist    = Math.max(fitH, fitW) * 1.15;     // 15% padding
+    /* FOV-based camera fit */
+    const fovRad = camera.fov * (Math.PI / 180);
+    const fitH   = (h / 2) / Math.tan(fovRad / 2);
+    const fitW   = (w / 2) / Math.tan((fovRad * camera.aspect) / 2);
+    const dist   = Math.max(fitH, fitW) * 1.1;
     camera.position.set(0, h * 0.5, dist);
-    camera.lookAt(0, h * 0.46, 0);
+    camera.lookAt(0, h * 0.44, 0);
     camera.updateProjectionMatrix();
 
-    groundDisc.position.y = 0.01;
-  }
-
-  /* Try relative path first (works on localhost + GitHub Pages same-origin).
-     GitHub Pages absolute URL as fallback for CodePen / cross-origin embeds. */
-  const loader = new THREE.GLTFLoader();
-  loader.load(
-    'character.glb',
-    onLoad,
-    null,
-    () => {
-      loader.load(
-        'https://ellalalala30-stack.github.io/rotsen-portfolio/character.glb',
-        onLoad,
-        null,
-        err => console.warn('GLB load error:', err)
-      );
-    }
-  );
+    groundDisc.position.y = box3.min.y + 0.5;
+  },
+  null,
+  err => console.warn('FBX load error:', err));
 
   /* Mouse tracking */
   let tRY = 0, cRY = 0;
@@ -266,22 +244,22 @@ const notePoolPro = [
   { title: 'Zero-Touch Ops', body: 'Infrastructure built correctly requires no ongoing intervention.' },
 ];
 
-/* Casual / warm tone — no-fluff / dark mode */
+/* Punchy / no-fluff tone — dark mode */
 const notePoolCasual = [
-  { title: 'real talk', body: 'Good design just feels right. You can\'t always explain it — you just know.' },
-  { title: 'automate it', body: 'If you\'re doing it twice, something\'s already broken. Let\'s fix that.' },
-  { title: 'client truth', body: 'They don\'t need a pretty logo. They need people to trust them.' },
-  { title: 'my setup', body: 'Make.com + Shopify + Workspace = I handle it once and walk away.' },
-  { title: 'on AI', body: 'AI is a shortcut, not a replacement. Taste still wins.' },
-  { title: 'brand game', body: 'Showing up the same way every time is the whole strategy.' },
-  { title: 'VA life', body: 'The best support is invisible. You just notice things running smoother.' },
-  { title: 'build it right', body: 'A good system doesn\'t need you checking on it. That\'s the whole point.' },
-  { title: 'every pixel', body: 'Nothing should be there by accident. If it\'s there, it\'s a choice.' },
-  { title: 'write it down', body: 'No SOP = you\'ll be re-explaining this forever. Document it.' },
-  { title: 'post with purpose', body: 'If you don\'t know why you\'re posting it, neither will they.' },
-  { title: 'La Union mornings', body: 'Best ideas hit at sunrise by the water. Honestly, no joke.' },
-  { title: 'get it done', body: 'Decisions, not decks. Results, not reports.' },
-  { title: 'zero touch', body: 'Built it right once. Hasn\'t needed me since. Love that for us.' },
+  { title: 'your brand', body: 'Your logo is fine. Your positioning is the problem.' },
+  { title: 'on automation', body: 'You\'re still doing that manually? That\'s not hustle. That\'s a broken system.' },
+  { title: 'client reality', body: 'They don\'t want deliverables. They want results. Big difference.' },
+  { title: 'on AI', body: 'AI produces. You decide. If you\'ve got nothing to say, neither does the tool.' },
+  { title: 'design truth', body: 'Good design doesn\'t get noticed. Bad design is all anyone sees.' },
+  { title: 'the VA myth', body: 'A VA who waits to be told what to do isn\'t support. That\'s just extra steps.' },
+  { title: 'shelved = failed', body: 'Adopted, not delivered. Shelved means it didn\'t work. Own that.' },
+  { title: 'your metrics', body: 'Your engagement is up 40%. Your revenue isn\'t. Explain that.' },
+  { title: 'the real job', body: 'The brief isn\'t the job. The job is figuring out what they actually need.' },
+  { title: 'zero touch ops', body: 'Built it right once. Hasn\'t needed me since. That\'s the whole point.' },
+  { title: 'consistency wins', body: 'Showing up the same way every time beats clever every single time.' },
+  { title: 'on SOPs', body: 'No process doc = it only exists in your head. That\'s a liability.' },
+  { title: 'La Union', body: 'Best clarity hits at sunrise by the water. Ship the thing.' },
+  { title: 'no fluff', body: 'Strategy decks don\'t ship. Execution does.' },
 ];
 
 function getNotePool() {
@@ -292,7 +270,7 @@ const colors = ['color-1', 'color-2', 'color-3', 'color-4', 'color-5'];
 let noteIndex = 0;
 let spawnedNotes = []; // { el, rot, timer }
 
-const NOTE_LIFETIME = 5000; // 5 seconds
+const NOTE_LIFETIME = 10000; // 10 seconds
 
 function noteCenter(el) {
   const hr = hero.getBoundingClientRect();
