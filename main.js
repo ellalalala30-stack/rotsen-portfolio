@@ -117,7 +117,7 @@ const colors = ['color-1', 'color-2', 'color-3', 'color-4', 'color-5'];
 let noteIndex = 0;
 let spawnedNotes = []; // { el, rot, timer }
 
-const NOTE_LIFETIME = 90000; // 90 seconds
+const NOTE_LIFETIME = 15000; // 15 seconds
 
 function noteCenter(el) {
   const hr = hero.getBoundingClientRect();
@@ -189,11 +189,11 @@ function spawnNote(x, y) {
   setTimeout(() => el.classList.add('landed'), 580);
 
   const hr = hero.getBoundingClientRect();
-  const px = x - hr.left - 87;
-  const py = y - hr.top  - 60;
+  const px = x - hr.left - 110;
+  const py = y - hr.top  - 70;
 
-  el.style.left = Math.max(8, Math.min(hr.width  - 185, px)) + 'px';
-  el.style.top  = Math.max(70, Math.min(hr.height - 160, py)) + 'px';
+  el.style.left = Math.max(8, Math.min(hr.width  - 230, px)) + 'px';
+  el.style.top  = Math.max(70, Math.min(hr.height - 180, py)) + 'px';
 
   el.innerHTML = `
     <div class="note-pin"></div>
