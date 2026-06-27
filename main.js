@@ -77,18 +77,33 @@
     camera.position.set(0, height * 0.55, height * 1.35);
     camera.lookAt(0, height * 0.5, 0);
 
+    /* Skin palette — applied per mesh name so body/hair/clothes look distinct */
+    const skinColor    = new THREE.Color(0xd4956a); // warm skin tone
+    const hairColor    = new THREE.Color(0x2a1a0e); // dark brown hair
+    const clothColor   = new THREE.Color(0x1a1a2e); // dark navy clothing
+    const shoeColor    = new THREE.Color(0x111111); // near-black shoes
+    const accentColor  = new THREE.Color(0xe8a427); // gold/orange accent
+
+    function pickColor(name) {
+      const n = (name || '').toLowerCase();
+      if (/hair|head_hair|eyebrow|eyelash/.test(n)) return hairColor;
+      if (/shoe|boot|foot/.test(n))                 return shoeColor;
+      if (/skin|body|arm|hand|leg|face|neck/.test(n)) return skinColor;
+      return clothColor; // default → clothing
+    }
+
     /* Enable shadows on all meshes */
     fbx.traverse(child => {
       if (child.isMesh) {
         child.castShadow = true;
         child.receiveShadow = true;
-        if (child.material) {
-          const mats = Array.isArray(child.material) ? child.material : [child.material];
-          mats.forEach(m => {
-            m.roughness = 0.75;
-            m.metalness = 0.05;
-          });
-        }
+        /* Replace material with a styled MeshStandardMaterial */
+        const col = pickColor(child.name);
+        child.material = new THREE.MeshStandardMaterial({
+          color: col,
+          roughness: col === skinColor ? 0.8 : 0.65,
+          metalness: col === accentColor ? 0.3 : 0.05,
+        });
       }
     });
 
