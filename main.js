@@ -3,97 +3,100 @@
    ============================================================ */
 
 /* ============================================================
-   THREE.JS — GLTF WALKING CHARACTER
+   THREE.JS — WALKING CHARACTER
    ============================================================ */
 (function initThree() {
   const canvas = document.getElementById('threeCanvas');
   if (!canvas) return;
 
+  /* Force canvas to fill its container with explicit pixel size */
+  function getSize() {
+    const p = canvas.parentElement;
+    const w = p.getBoundingClientRect().width  || window.innerWidth * 0.42;
+    const h = p.getBoundingClientRect().height || window.innerHeight * 0.8;
+    return { w: Math.round(w), h: Math.round(h) };
+  }
+
   const renderer = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: true });
   renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-  renderer.shadowMap.enabled = true;
 
   const scene = new THREE.Scene();
-  const camera = new THREE.PerspectiveCamera(50, 1, 0.01, 1000);
-  camera.position.set(0, 1, 4);
-  camera.lookAt(0, 1, 0);
+  const camera = new THREE.PerspectiveCamera(50, 1, 0.01, 500);
+  camera.position.set(0, 0, 3);
+  camera.lookAt(0, 0, 0);
 
   function resize() {
-    const parent = canvas.parentElement;
-    const w = parent.offsetWidth  || 400;
-    const h = parent.offsetHeight || 600;
+    const { w, h } = getSize();
     renderer.setSize(w, h, false);
+    canvas.style.width  = w + 'px';
+    canvas.style.height = h + 'px';
     camera.aspect = w / h;
     camera.updateProjectionMatrix();
   }
   window.addEventListener('resize', resize);
-  window.addEventListener('load', resize);
-  resize();
+
+  /* Run resize after layout paint */
+  requestAnimationFrame(() => { resize(); requestAnimationFrame(resize); });
 
   /* Lights */
-  const ambient = new THREE.AmbientLight(0xffffff, 0.8);
-  scene.add(ambient);
-  const key = new THREE.DirectionalLight(0xfff5e0, 2.0);
-  key.position.set(-3, 8, 6);
-  key.castShadow = true;
-  scene.add(key);
-  const fill = new THREE.DirectionalLight(0xd0e8ff, 0.6);
-  fill.position.set(5, 2, 2);
-  scene.add(fill);
+  scene.add(new THREE.AmbientLight(0xffffff, 1.0));
+  const dir = new THREE.DirectionalLight(0xffffff, 1.5);
+  dir.position.set(2, 5, 3);
+  scene.add(dir);
+
+  /* TEST: bright red box — if this appears, renderer works */
+  const testBox = new THREE.Mesh(
+    new THREE.BoxGeometry(0.5, 0.5, 0.5),
+    new THREE.MeshStandardMaterial({ color: 0xff3333 })
+  );
+  scene.add(testBox);
 
   let mixer = null;
-
-  /* Start render loop immediately — nothing can crash it */
   const clock = new THREE.Clock();
+
   (function animate() {
     requestAnimationFrame(animate);
+    testBox.rotation.y += 0.01;
     if (mixer) mixer.update(clock.getDelta());
     renderer.render(scene, camera);
   })();
 
-  /* Load character — wrapped so a missing GLTFLoader won't kill the loop */
+  /* Load GLB after renderer is confirmed working */
   function loadCharacter() {
-    if (typeof THREE.GLTFLoader === 'undefined') {
-      console.warn('GLTFLoader not available');
-      return;
-    }
-    const loader = new THREE.GLTFLoader();
-    loader.load('character.glb',
+    if (typeof THREE.GLTFLoader === 'undefined') { console.warn('No GLTFLoader'); return; }
+    new THREE.GLTFLoader().load('character.glb',
       gltf => {
+        scene.remove(testBox);
         const model = gltf.scene;
         model.traverse(c => {
           if (c.isMesh) {
-            c.castShadow = true;
             const mats = Array.isArray(c.material) ? c.material : [c.material];
             mats.forEach(m => { if (m) m.side = THREE.DoubleSide; });
           }
         });
-
-        const box3 = new THREE.Box3().setFromObject(model);
-        const size = new THREE.Vector3(); box3.getSize(size);
-        const ctr  = new THREE.Vector3(); box3.getCenter(ctr);
-        model.position.set(-ctr.x, -box3.min.y, -ctr.z);
+        const b = new THREE.Box3().setFromObject(model);
+        const s = new THREE.Vector3(); b.getSize(s);
+        const c2 = new THREE.Vector3(); b.getCenter(c2);
+        model.position.set(-c2.x, -b.min.y, -c2.z);
         scene.add(model);
-
-        const charH = size.y;
-        camera.position.set(0, charH * 0.5, charH * 1.6);
-        camera.lookAt(0, charH * 0.45, 0);
+        const H = s.y;
+        camera.position.set(0, H * 0.5, H * 1.7);
+        camera.lookAt(0, H * 0.45, 0);
         camera.updateProjectionMatrix();
-
         if (gltf.animations && gltf.animations.length) {
           mixer = new THREE.AnimationMixer(model);
-          const action = mixer.clipAction(gltf.animations[0]);
-          action.setLoop(THREE.LoopRepeat, Infinity);
-          action.play();
+          const a = mixer.clipAction(gltf.animations[0]);
+          a.setLoop(THREE.LoopRepeat, Infinity);
+          a.play();
         }
       },
       null,
-      err => console.error('GLB load failed:', err)
+      e => console.error('GLB error:', e)
     );
   }
   loadCharacter();
 
-  window._setCharacterDark = dark => { ambient.intensity = dark ? 0.4 : 0.8; };
+  window._setCharacterDark = dark => { dir.intensity = dark ? 0.8 : 1.5; };
 })();
 
 /* ============================================================
