@@ -318,20 +318,10 @@ body {
   pointer-events: none;
 }
 
-.char-placeholder {
+#threeCanvas {
   width: 100%;
   height: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  opacity: 0.18;
-  font-family: var(--mono);
-  font-size: 0.75rem;
-  color: var(--text);
-  letter-spacing: 0.08em;
-  text-align: center;
-  border: 1px dashed var(--border);
-  border-radius: 4px;
+  display: block;
 }
 
 /* Profile sticky note */
