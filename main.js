@@ -27,6 +27,7 @@
     camera.updateProjectionMatrix();
   }
   window.addEventListener('resize', resize);
+  window.addEventListener('load', resize);
   resize();
 
   /* Lights */
@@ -40,59 +41,57 @@
   fill.position.set(5, 2, 2);
   scene.add(fill);
 
-  /* Visible placeholder — proves renderer is alive while GLB loads */
-  const placeholder = new THREE.Mesh(
-    new THREE.SphereGeometry(0.3, 16, 16),
-    new THREE.MeshStandardMaterial({ color: 0xcccccc, transparent: true, opacity: 0.3 })
-  );
-  placeholder.position.set(0, 1, 0);
-  scene.add(placeholder);
-
   let mixer = null;
 
-  const loader = new THREE.GLTFLoader();
-  loader.load('character.glb',
-    gltf => {
-      scene.remove(placeholder);
-
-      const model = gltf.scene;
-      model.traverse(c => {
-        if (c.isMesh) {
-          c.castShadow = true;
-          if (Array.isArray(c.material)) c.material.forEach(m => { m.side = THREE.DoubleSide; });
-          else if (c.material) c.material.side = THREE.DoubleSide;
-        }
-      });
-
-      /* Fit model to view */
-      const box3 = new THREE.Box3().setFromObject(model);
-      const size = new THREE.Vector3(); box3.getSize(size);
-      const ctr  = new THREE.Vector3(); box3.getCenter(ctr);
-      model.position.set(-ctr.x, -box3.min.y, -ctr.z);
-      scene.add(model);
-
-      const charH = size.y;
-      camera.position.set(0, charH * 0.5, charH * 1.6);
-      camera.lookAt(0, charH * 0.45, 0);
-      camera.updateProjectionMatrix();
-
-      if (gltf.animations.length) {
-        mixer = new THREE.AnimationMixer(model);
-        const action = mixer.clipAction(gltf.animations[0]);
-        action.setLoop(THREE.LoopRepeat, Infinity);
-        action.play();
-      }
-    },
-    null,
-    err => { console.error('GLB failed:', err); scene.remove(placeholder); }
-  );
-
+  /* Start render loop immediately — nothing can crash it */
   const clock = new THREE.Clock();
   (function animate() {
     requestAnimationFrame(animate);
     if (mixer) mixer.update(clock.getDelta());
     renderer.render(scene, camera);
   })();
+
+  /* Load character — wrapped so a missing GLTFLoader won't kill the loop */
+  function loadCharacter() {
+    if (typeof THREE.GLTFLoader === 'undefined') {
+      console.warn('GLTFLoader not available');
+      return;
+    }
+    const loader = new THREE.GLTFLoader();
+    loader.load('character.glb',
+      gltf => {
+        const model = gltf.scene;
+        model.traverse(c => {
+          if (c.isMesh) {
+            c.castShadow = true;
+            const mats = Array.isArray(c.material) ? c.material : [c.material];
+            mats.forEach(m => { if (m) m.side = THREE.DoubleSide; });
+          }
+        });
+
+        const box3 = new THREE.Box3().setFromObject(model);
+        const size = new THREE.Vector3(); box3.getSize(size);
+        const ctr  = new THREE.Vector3(); box3.getCenter(ctr);
+        model.position.set(-ctr.x, -box3.min.y, -ctr.z);
+        scene.add(model);
+
+        const charH = size.y;
+        camera.position.set(0, charH * 0.5, charH * 1.6);
+        camera.lookAt(0, charH * 0.45, 0);
+        camera.updateProjectionMatrix();
+
+        if (gltf.animations && gltf.animations.length) {
+          mixer = new THREE.AnimationMixer(model);
+          const action = mixer.clipAction(gltf.animations[0]);
+          action.setLoop(THREE.LoopRepeat, Infinity);
+          action.play();
+        }
+      },
+      null,
+      err => console.error('GLB load failed:', err)
+    );
+  }
+  loadCharacter();
 
   window._setCharacterDark = dark => { ambient.intensity = dark ? 0.4 : 0.8; };
 })();
