@@ -7,19 +7,21 @@
    ============================================================ */
 (function initThree() {
   const canvas = document.getElementById('threeCanvas');
+  if (!canvas) return;
+
   const renderer = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: true });
   renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
   renderer.shadowMap.enabled = true;
-  renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 
   const scene = new THREE.Scene();
-  const camera = new THREE.PerspectiveCamera(45, 1, 0.1, 100);
-  camera.position.set(0, 1.2, 4.5);
-  camera.lookAt(0, 1.0, 0);
+  const camera = new THREE.PerspectiveCamera(50, 1, 0.01, 1000);
+  camera.position.set(0, 1, 4);
+  camera.lookAt(0, 1, 0);
 
   function resize() {
-    const w = canvas.parentElement.clientWidth;
-    const h = canvas.parentElement.clientHeight;
+    const parent = canvas.parentElement;
+    const w = parent.offsetWidth  || 400;
+    const h = parent.offsetHeight || 600;
     renderer.setSize(w, h, false);
     camera.aspect = w / h;
     camera.updateProjectionMatrix();
@@ -28,79 +30,71 @@
   resize();
 
   /* Lights */
-  const ambient = new THREE.AmbientLight(0xffffff, 0.7);
+  const ambient = new THREE.AmbientLight(0xffffff, 0.8);
   scene.add(ambient);
-  const key = new THREE.DirectionalLight(0xfff5e0, 1.8);
-  key.position.set(-3, 6, 5);
+  const key = new THREE.DirectionalLight(0xfff5e0, 2.0);
+  key.position.set(-3, 8, 6);
   key.castShadow = true;
-  key.shadow.mapSize.set(1024, 1024);
   scene.add(key);
-  const fill = new THREE.DirectionalLight(0xd0e8ff, 0.5);
-  fill.position.set(4, 2, 2);
+  const fill = new THREE.DirectionalLight(0xd0e8ff, 0.6);
+  fill.position.set(5, 2, 2);
   scene.add(fill);
-  const rim = new THREE.DirectionalLight(0xffa040, 0.35);
-  rim.position.set(0, 3, -4);
-  scene.add(rim);
 
-  /* Ground shadow */
-  const ground = new THREE.Mesh(
-    new THREE.CircleGeometry(1.2, 32),
-    new THREE.MeshBasicMaterial({ color: 0x000000, transparent: true, opacity: 0.10 })
+  /* Visible placeholder — proves renderer is alive while GLB loads */
+  const placeholder = new THREE.Mesh(
+    new THREE.SphereGeometry(0.3, 16, 16),
+    new THREE.MeshStandardMaterial({ color: 0xcccccc, transparent: true, opacity: 0.3 })
   );
-  ground.rotation.x = -Math.PI / 2;
-  ground.position.y = 0.01;
-  scene.add(ground);
+  placeholder.position.set(0, 1, 0);
+  scene.add(placeholder);
 
-  /* Load GLTF character */
   let mixer = null;
+
   const loader = new THREE.GLTFLoader();
-  loader.load(
-    'character.glb',
+  loader.load('character.glb',
     gltf => {
+      scene.remove(placeholder);
+
       const model = gltf.scene;
       model.traverse(c => {
         if (c.isMesh) {
           c.castShadow = true;
-          c.receiveShadow = true;
-          c.material.side = THREE.DoubleSide;
+          if (Array.isArray(c.material)) c.material.forEach(m => { m.side = THREE.DoubleSide; });
+          else if (c.material) c.material.side = THREE.DoubleSide;
         }
       });
 
-      /* Centre model at feet */
-      const box = new THREE.Box3().setFromObject(model);
-      const centre = new THREE.Vector3();
-      box.getCenter(centre);
-      model.position.set(-centre.x, -box.min.y, -centre.z);
-
-      const h = box.max.y - box.min.y;
-      camera.position.set(0, h * 0.52, h * 1.8);
-      camera.lookAt(0, h * 0.46, 0);
-      camera.updateProjectionMatrix();
-
+      /* Fit model to view */
+      const box3 = new THREE.Box3().setFromObject(model);
+      const size = new THREE.Vector3(); box3.getSize(size);
+      const ctr  = new THREE.Vector3(); box3.getCenter(ctr);
+      model.position.set(-ctr.x, -box3.min.y, -ctr.z);
       scene.add(model);
 
-      /* Play first animation (walk) on loop */
-      if (gltf.animations && gltf.animations.length > 0) {
+      const charH = size.y;
+      camera.position.set(0, charH * 0.5, charH * 1.6);
+      camera.lookAt(0, charH * 0.45, 0);
+      camera.updateProjectionMatrix();
+
+      if (gltf.animations.length) {
         mixer = new THREE.AnimationMixer(model);
-        const clip = gltf.animations[0];
-        const action = mixer.clipAction(clip);
+        const action = mixer.clipAction(gltf.animations[0]);
         action.setLoop(THREE.LoopRepeat, Infinity);
         action.play();
       }
     },
     null,
-    err => console.warn('GLTF load error', err)
+    err => { console.error('GLB failed:', err); scene.remove(placeholder); }
   );
 
   const clock = new THREE.Clock();
-  function animate() {
+  (function animate() {
     requestAnimationFrame(animate);
     if (mixer) mixer.update(clock.getDelta());
     renderer.render(scene, camera);
-  }
-  animate();
+  })();
 
-  window._setCharacterDark = (dark) => { ambient.intensity = dark ? 0.4 : 0.7; };
+  window._setCharacterDark = dark => { ambient.intensity = dark ? 0.4 : 0.8; };
 })();
 
 /* ============================================================
