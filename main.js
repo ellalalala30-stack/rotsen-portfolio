@@ -77,23 +77,25 @@
     camera.lookAt(0, height * 0.46, 0);
     camera.updateProjectionMatrix();
 
-    /* Shadows */
     fbx.traverse(child => {
-      if (child.isMesh) {
+      if (child.isMesh || child.isSkinnedMesh) {
+        /* Hide joint sphere visualizers baked into Mixamo FBX — keep only skin mesh */
+        if (!child.isSkinnedMesh) { child.visible = false; return; }
         child.castShadow = true;
         child.receiveShadow = true;
         if (child.material) {
           const mats = Array.isArray(child.material) ? child.material : [child.material];
-          mats.forEach(m => { m.roughness = 0.75; m.metalness = 0.05; });
+          mats.forEach(m => { m.side = THREE.DoubleSide; m.roughness = 0.75; m.metalness = 0.05; });
         }
       }
     });
 
-    /* Walk animation — in place, seamless loop */
+    /* Seamless continuous walk loop */
     if (fbx.animations && fbx.animations.length > 0) {
       mixer = new THREE.AnimationMixer(fbx);
       const action = mixer.clipAction(fbx.animations[0]);
       action.setLoop(THREE.LoopRepeat, Infinity);
+      action.clampWhenFinished = false;
       action.timeScale = 0.85;
       action.play();
     }
