@@ -55,10 +55,9 @@
 
   const loader = new THREE.FBXLoader();
 
-  /* Try relative path first, fall back to GitHub Pages, then raw GitHub */
+  /* Try relative path first, then raw GitHub (Pages not enabled) */
   const urls = [
     'character.fbx',
-    'https://ellalalala30-stack.github.io/rotsen-portfolio/character.fbx',
     'https://raw.githubusercontent.com/ellalalala30-stack/rotsen-portfolio/main/character.fbx',
   ];
 
