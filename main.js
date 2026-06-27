@@ -95,22 +95,30 @@
 
     fbx.position.set(-centre.x, -box3.min.y, -centre.z);
 
-    /* Mirror on X to face left (toward hero copy) */
+    /* Face character left — rotate Y instead of scale flip (scale flip breaks normals) */
     charGroup = new THREE.Group();
-    charGroup.scale.x = -1;
     charGroup.add(fbx);
+    charGroup.rotation.y = Math.PI; // face left toward hero text
     scene.add(charGroup);
+
+    /* Double-sided materials so the character renders correctly */
+    fbx.traverse(child => {
+      if (child.isMesh && child.material) {
+        const mats = Array.isArray(child.material) ? child.material : [child.material];
+        mats.forEach(m => { m.side = THREE.DoubleSide; });
+      }
+    });
 
     /* FOV-based camera fit */
     const fovRad = camera.fov * (Math.PI / 180);
     const fitH   = (h / 2) / Math.tan(fovRad / 2);
     const fitW   = (w / 2) / Math.tan((fovRad * camera.aspect) / 2);
-    const dist   = Math.max(fitH, fitW) * 1.1;
+    const dist   = Math.max(fitH, fitW) * 1.05;
     camera.position.set(0, h * 0.5, dist);
     camera.lookAt(0, h * 0.44, 0);
     camera.updateProjectionMatrix();
 
-    groundDisc.position.y = box3.min.y + 0.5;
+    groundDisc.position.y = 0.5;
   }
 
   tryLoad(0);
