@@ -53,7 +53,9 @@
   let mixer = null;
   let characterGroup = null;
 
-  loader.load('character.fbx', fbx => {
+  /* Walking_1.fbx from Mixamo contains both the character mesh and
+     the walking animation baked in — load it as a single file */
+  loader.load('Walking_1.fbx', fbx => {
     fbx.scale.setScalar(1);
     const box3 = new THREE.Box3().setFromObject(fbx);
     const centre = new THREE.Vector3();
@@ -81,28 +83,13 @@
       }
     });
 
-    mixer = new THREE.AnimationMixer(fbx);
-
-    /* Load walking animation from separate FBX */
-    const animLoader = new THREE.FBXLoader();
-    animLoader.load('Walking_1.fbx', animFbx => {
-      if (animFbx.animations && animFbx.animations.length > 0) {
-        const clip = animFbx.animations[0];
-        const action = mixer.clipAction(clip);
-        action.setLoop(THREE.LoopRepeat, Infinity);
-        action.timeScale = 1.0;
-        action.play();
-      }
-    }, null, err => {
-      /* Fallback: use embedded animation if walk FBX fails */
-      console.warn('Walk FBX error, using embedded animation:', err);
-      if (fbx.animations && fbx.animations.length > 0) {
-        const action = mixer.clipAction(fbx.animations[0]);
-        action.setLoop(THREE.LoopRepeat, Infinity);
-        action.timeScale = 0.85;
-        action.play();
-      }
-    });
+    if (fbx.animations && fbx.animations.length > 0) {
+      mixer = new THREE.AnimationMixer(fbx);
+      const action = mixer.clipAction(fbx.animations[0]);
+      action.setLoop(THREE.LoopRepeat, Infinity);
+      action.timeScale = 1.0;
+      action.play();
+    }
   }, null, err => console.warn('FBX error:', err));
 
   const clock = new THREE.Clock();
