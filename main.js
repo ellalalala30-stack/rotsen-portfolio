@@ -56,8 +56,8 @@
   const loader = new THREE.FBXLoader();
 
   const urls = [
+    'https://raw.githubusercontent.com/ellalalala30-stack/rotsen-portfolio/main/character.fbx',
     'character.fbx',
-    'https://ellalalala30-stack.github.io/rotsen-portfolio/character.fbx',
   ];
 
   function tryLoad(index) {

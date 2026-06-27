@@ -327,12 +327,12 @@ body {
   background: transparent;
 }
 
-/* Profile sticky note */
+/* Profile sticky note — bottom-left of hero, under headline */
 .profile-note {
   position: absolute;
-  bottom: 12%;
-  left: 3%;
-  transform: rotate(-2deg);
+  bottom: 8%;
+  left: 2.5%;
+  transform: rotate(-1.5deg);
   width: 210px;
   background: #fef9c3;
   color: #1a1a1a;
