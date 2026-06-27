@@ -65,8 +65,9 @@
     characterGroup.add(fbx);
     scene.add(characterGroup);
 
-    camera.position.set(0, height * 0.55, height * 1.35);
-    camera.lookAt(0, height * 0.5, 0);
+    /* Camera shows full body — pull back enough to see feet */
+    camera.position.set(0, height * 0.52, height * 1.55);
+    camera.lookAt(0, height * 0.48, 0);
     camera.updateProjectionMatrix();
 
     fbx.traverse(child => {
@@ -80,13 +81,28 @@
       }
     });
 
-    if (fbx.animations && fbx.animations.length > 0) {
-      mixer = new THREE.AnimationMixer(fbx);
-      const action = mixer.clipAction(fbx.animations[0]);
-      action.setLoop(THREE.LoopRepeat, Infinity);
-      action.timeScale = 0.85;
-      action.play();
-    }
+    mixer = new THREE.AnimationMixer(fbx);
+
+    /* Load walking animation from separate FBX */
+    const animLoader = new THREE.FBXLoader();
+    animLoader.load('Walking_1.fbx', animFbx => {
+      if (animFbx.animations && animFbx.animations.length > 0) {
+        const clip = animFbx.animations[0];
+        const action = mixer.clipAction(clip);
+        action.setLoop(THREE.LoopRepeat, Infinity);
+        action.timeScale = 1.0;
+        action.play();
+      }
+    }, null, err => {
+      /* Fallback: use embedded animation if walk FBX fails */
+      console.warn('Walk FBX error, using embedded animation:', err);
+      if (fbx.animations && fbx.animations.length > 0) {
+        const action = mixer.clipAction(fbx.animations[0]);
+        action.setLoop(THREE.LoopRepeat, Infinity);
+        action.timeScale = 0.85;
+        action.play();
+      }
+    });
   }, null, err => console.warn('FBX error:', err));
 
   const clock = new THREE.Clock();

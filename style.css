@@ -308,12 +308,12 @@ body {
 .hero-right {
   position: absolute;
   right: 0;
-  top: 64px;
+  top: 0;
   bottom: 0;
-  width: 42%;
-  max-width: 520px;
+  width: 44%;
+  max-width: 560px;
   display: flex;
-  align-items: flex-end;
+  align-items: stretch;
   justify-content: center;
   z-index: 4;
   pointer-events: none;
