@@ -51,22 +51,42 @@
   ground.position.y = 0.01;
   scene.add(ground);
 
-  /* Load GLTF character with built-in walk animation */
+  /* Load GLTF character */
   let mixer = null;
   const loader = new THREE.GLTFLoader();
   loader.load(
-    'https://threejs.org/examples/models/gltf/Soldier.glb',
+    'character.glb',
     gltf => {
       const model = gltf.scene;
-      model.traverse(c => { if (c.isMesh) { c.castShadow = true; c.receiveShadow = true; } });
+      model.traverse(c => {
+        if (c.isMesh) {
+          c.castShadow = true;
+          c.receiveShadow = true;
+          c.material.side = THREE.DoubleSide;
+        }
+      });
+
+      /* Centre model at feet */
+      const box = new THREE.Box3().setFromObject(model);
+      const centre = new THREE.Vector3();
+      box.getCenter(centre);
+      model.position.set(-centre.x, -box.min.y, -centre.z);
+
+      const h = box.max.y - box.min.y;
+      camera.position.set(0, h * 0.52, h * 1.8);
+      camera.lookAt(0, h * 0.46, 0);
+      camera.updateProjectionMatrix();
+
       scene.add(model);
 
-      /* Play Walk animation (index 3 in Soldier.glb) */
-      mixer = new THREE.AnimationMixer(model);
-      const walkClip = gltf.animations.find(a => a.name === 'Walk') || gltf.animations[0];
-      const action = mixer.clipAction(walkClip);
-      action.setLoop(THREE.LoopRepeat, Infinity);
-      action.play();
+      /* Play first animation (walk) on loop */
+      if (gltf.animations && gltf.animations.length > 0) {
+        mixer = new THREE.AnimationMixer(model);
+        const clip = gltf.animations[0];
+        const action = mixer.clipAction(clip);
+        action.setLoop(THREE.LoopRepeat, Infinity);
+        action.play();
+      }
     },
     null,
     err => console.warn('GLTF load error', err)
