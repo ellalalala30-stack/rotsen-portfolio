@@ -13,7 +13,7 @@
   renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 
   const scene = new THREE.Scene();
-  const camera = new THREE.PerspectiveCamera(45, 1, 0.1, 200);
+  const camera = new THREE.PerspectiveCamera(45, 1, 0.1, 5000);
   camera.position.set(0, 100, 220);
 
   function resize() {
@@ -36,7 +36,7 @@
   key.shadow.mapSize.set(1024, 1024);
   scene.add(key);
 
-  const fill = new THREE.PointLight(0xf5a623, 1.0, 600);
+  const fill = new THREE.PointLight(0xf5a623, 1.0, 6000);
   fill.position.set(120, 100, 100);
   scene.add(fill);
 
@@ -68,16 +68,18 @@
     const height = box3.max.y - box3.min.y;
     fbx.position.set(-centre.x, -box3.min.y, -centre.z);
 
-    /* Wrap in a group so we can rotate for mouse tracking */
     characterGroup = new THREE.Group();
     characterGroup.add(fbx);
+    /* Face left toward hero text — no mouse tracking */
+    characterGroup.rotation.y = Math.PI;
     scene.add(characterGroup);
 
-    /* Camera framing — fit full body */
-    camera.position.set(0, height * 0.55, height * 1.35);
-    camera.lookAt(0, height * 0.5, 0);
+    /* Camera — pull back more so character fills ~70% of frame height */
+    camera.position.set(0, height * 0.52, height * 1.8);
+    camera.lookAt(0, height * 0.46, 0);
+    camera.updateProjectionMatrix();
 
-    /* Enable shadows on all meshes */
+    /* Shadows + DoubleSide for embedded-texture FBX */
     fbx.traverse(child => {
       if (child.isMesh) {
         child.castShadow = true;
@@ -85,6 +87,7 @@
         if (child.material) {
           const mats = Array.isArray(child.material) ? child.material : [child.material];
           mats.forEach(m => {
+            m.side = THREE.DoubleSide;
             m.roughness = 0.75;
             m.metalness = 0.05;
           });
@@ -92,7 +95,7 @@
       }
     });
 
-    /* Play walk animation */
+    /* Play animation */
     if (fbx.animations && fbx.animations.length > 0) {
       mixer = new THREE.AnimationMixer(fbx);
       const action = mixer.clipAction(fbx.animations[0]);
@@ -105,32 +108,12 @@
   err => { console.warn('FBX load error:', err); }
   );
 
-  /* Mouse tracking */
-  let tRY = 0, tRX = 0, cRY = 0, cRX = 0;
-
-  document.addEventListener('mousemove', e => {
-    const nx = (e.clientX / window.innerWidth  - 0.5) * 2;
-    const ny = (e.clientY / window.innerHeight - 0.5) * 2;
-    tRY = nx * 0.5;
-    tRX = -ny * 0.12;
-  });
-
   const clock = new THREE.Clock();
 
   function animate() {
     requestAnimationFrame(animate);
     const delta = clock.getDelta();
-
     if (mixer) mixer.update(delta);
-
-    cRY += (tRY - cRY) * 0.04;
-    cRX += (tRX - cRX) * 0.04;
-
-    if (characterGroup) {
-      characterGroup.rotation.y = cRY;
-      characterGroup.rotation.x = cRX;
-    }
-
     renderer.render(scene, camera);
   }
   animate();
