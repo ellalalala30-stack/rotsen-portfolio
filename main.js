@@ -13,7 +13,7 @@
   renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 
   const scene = new THREE.Scene();
-  const camera = new THREE.PerspectiveCamera(45, 1, 0.1, 5000);
+  const camera = new THREE.PerspectiveCamera(45, 1, 0.1, 200);
   camera.position.set(0, 100, 220);
 
   function resize() {
@@ -36,7 +36,7 @@
   key.shadow.mapSize.set(1024, 1024);
   scene.add(key);
 
-  const fill = new THREE.PointLight(0xf5a623, 1.0, 6000);
+  const fill = new THREE.PointLight(0xf5a623, 1.0, 600);
   fill.position.set(120, 100, 100);
   scene.add(fill);
 
@@ -61,7 +61,7 @@
   loader.load('character.fbx', fbx => {
     fbx.scale.setScalar(1);
 
-    /* Centre the model at feet level */
+    /* Centre at feet level */
     const box3 = new THREE.Box3().setFromObject(fbx);
     const centre = new THREE.Vector3();
     box3.getCenter(centre);
@@ -70,32 +70,26 @@
 
     characterGroup = new THREE.Group();
     characterGroup.add(fbx);
-    /* Face left toward hero text — no mouse tracking */
-    characterGroup.rotation.y = Math.PI;
     scene.add(characterGroup);
 
-    /* Camera — pull back more so character fills ~70% of frame height */
-    camera.position.set(0, height * 0.52, height * 1.8);
+    /* Pull camera back so character occupies ~75% of frame height */
+    camera.position.set(0, height * 0.5, height * 1.7);
     camera.lookAt(0, height * 0.46, 0);
     camera.updateProjectionMatrix();
 
-    /* Shadows + DoubleSide for embedded-texture FBX */
+    /* Shadows */
     fbx.traverse(child => {
       if (child.isMesh) {
         child.castShadow = true;
         child.receiveShadow = true;
         if (child.material) {
           const mats = Array.isArray(child.material) ? child.material : [child.material];
-          mats.forEach(m => {
-            m.side = THREE.DoubleSide;
-            m.roughness = 0.75;
-            m.metalness = 0.05;
-          });
+          mats.forEach(m => { m.roughness = 0.75; m.metalness = 0.05; });
         }
       }
     });
 
-    /* Play animation */
+    /* Walk animation — in place, seamless loop */
     if (fbx.animations && fbx.animations.length > 0) {
       mixer = new THREE.AnimationMixer(fbx);
       const action = mixer.clipAction(fbx.animations[0]);
@@ -104,7 +98,7 @@
       action.play();
     }
   },
-  xhr => { /* progress */ },
+  xhr => {},
   err => { console.warn('FBX load error:', err); }
   );
 
