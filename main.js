@@ -3,100 +3,104 @@
    ============================================================ */
 
 /* ============================================================
-   THREE.JS — WALKING CHARACTER
+   THREE.JS — MIXAMO FBX CHARACTER
    ============================================================ */
 (function initThree() {
   const canvas = document.getElementById('threeCanvas');
-  if (!canvas) return;
-
-  /* Force canvas to fill its container with explicit pixel size */
-  function getSize() {
-    const p = canvas.parentElement;
-    const w = p.getBoundingClientRect().width  || window.innerWidth * 0.42;
-    const h = p.getBoundingClientRect().height || window.innerHeight * 0.8;
-    return { w: Math.round(w), h: Math.round(h) };
-  }
-
   const renderer = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: true });
   renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+  renderer.shadowMap.enabled = true;
+  renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 
   const scene = new THREE.Scene();
-  const camera = new THREE.PerspectiveCamera(50, 1, 0.01, 500);
-  camera.position.set(0, 0, 3);
-  camera.lookAt(0, 0, 0);
+  const camera = new THREE.PerspectiveCamera(45, 1, 0.1, 200);
+  camera.position.set(0, 100, 220);
 
   function resize() {
-    const { w, h } = getSize();
+    const w = canvas.parentElement.clientWidth;
+    const h = canvas.parentElement.clientHeight;
+    if (!w || !h) return;
     renderer.setSize(w, h, false);
-    canvas.style.width  = w + 'px';
-    canvas.style.height = h + 'px';
     camera.aspect = w / h;
     camera.updateProjectionMatrix();
   }
   window.addEventListener('resize', resize);
+  window.addEventListener('load', resize);
+  resize();
 
-  /* Run resize after layout paint */
-  requestAnimationFrame(() => { resize(); requestAnimationFrame(resize); });
+  const ambient = new THREE.AmbientLight(0xffffff, 0.7);
+  scene.add(ambient);
+  const key = new THREE.DirectionalLight(0xfff5e0, 1.6);
+  key.position.set(-80, 200, 150);
+  key.castShadow = true;
+  key.shadow.mapSize.set(1024, 1024);
+  scene.add(key);
+  const fill = new THREE.PointLight(0xf5a623, 1.0, 600);
+  fill.position.set(120, 100, 100);
+  scene.add(fill);
+  const rim = new THREE.DirectionalLight(0x88ccff, 0.5);
+  rim.position.set(80, 120, -100);
+  scene.add(rim);
 
-  /* Lights */
-  scene.add(new THREE.AmbientLight(0xffffff, 1.0));
-  const dir = new THREE.DirectionalLight(0xffffff, 1.5);
-  dir.position.set(2, 5, 3);
-  scene.add(dir);
-
-  /* TEST: bright red box — if this appears, renderer works */
-  const testBox = new THREE.Mesh(
-    new THREE.BoxGeometry(0.5, 0.5, 0.5),
-    new THREE.MeshStandardMaterial({ color: 0xff3333 })
+  const ground = new THREE.Mesh(
+    new THREE.CircleGeometry(60, 32),
+    new THREE.MeshBasicMaterial({ color: 0x000000, transparent: true, opacity: 0.12 })
   );
-  scene.add(testBox);
+  ground.rotation.x = -Math.PI / 2;
+  scene.add(ground);
 
+  const loader = new THREE.FBXLoader();
   let mixer = null;
-  const clock = new THREE.Clock();
+  let characterGroup = null;
 
-  (function animate() {
+  loader.load('character.fbx', fbx => {
+    fbx.scale.setScalar(1);
+    const box3 = new THREE.Box3().setFromObject(fbx);
+    const centre = new THREE.Vector3();
+    box3.getCenter(centre);
+    const height = box3.max.y - box3.min.y;
+    fbx.position.set(-centre.x, -box3.min.y, -centre.z);
+
+    characterGroup = new THREE.Group();
+    characterGroup.add(fbx);
+    scene.add(characterGroup);
+
+    camera.position.set(0, height * 0.55, height * 1.35);
+    camera.lookAt(0, height * 0.5, 0);
+    camera.updateProjectionMatrix();
+
+    fbx.traverse(child => {
+      if (child.isMesh) {
+        child.castShadow = true;
+        child.receiveShadow = true;
+        if (child.material) {
+          const mats = Array.isArray(child.material) ? child.material : [child.material];
+          mats.forEach(m => { m.roughness = 0.75; m.metalness = 0.05; });
+        }
+      }
+    });
+
+    if (fbx.animations && fbx.animations.length > 0) {
+      mixer = new THREE.AnimationMixer(fbx);
+      const action = mixer.clipAction(fbx.animations[0]);
+      action.setLoop(THREE.LoopRepeat, Infinity);
+      action.timeScale = 0.85;
+      action.play();
+    }
+  }, null, err => console.warn('FBX error:', err));
+
+  const clock = new THREE.Clock();
+  function animate() {
     requestAnimationFrame(animate);
-    testBox.rotation.y += 0.01;
     if (mixer) mixer.update(clock.getDelta());
     renderer.render(scene, camera);
-  })();
-
-  /* Load GLB after renderer is confirmed working */
-  function loadCharacter() {
-    if (typeof THREE.GLTFLoader === 'undefined') { console.warn('No GLTFLoader'); return; }
-    new THREE.GLTFLoader().load('character.glb',
-      gltf => {
-        scene.remove(testBox);
-        const model = gltf.scene;
-        model.traverse(c => {
-          if (c.isMesh) {
-            const mats = Array.isArray(c.material) ? c.material : [c.material];
-            mats.forEach(m => { if (m) m.side = THREE.DoubleSide; });
-          }
-        });
-        const b = new THREE.Box3().setFromObject(model);
-        const s = new THREE.Vector3(); b.getSize(s);
-        const c2 = new THREE.Vector3(); b.getCenter(c2);
-        model.position.set(-c2.x, -b.min.y, -c2.z);
-        scene.add(model);
-        const H = s.y;
-        camera.position.set(0, H * 0.5, H * 1.7);
-        camera.lookAt(0, H * 0.45, 0);
-        camera.updateProjectionMatrix();
-        if (gltf.animations && gltf.animations.length) {
-          mixer = new THREE.AnimationMixer(model);
-          const a = mixer.clipAction(gltf.animations[0]);
-          a.setLoop(THREE.LoopRepeat, Infinity);
-          a.play();
-        }
-      },
-      null,
-      e => console.error('GLB error:', e)
-    );
   }
-  loadCharacter();
+  animate();
 
-  window._setCharacterDark = dark => { dir.intensity = dark ? 0.8 : 1.5; };
+  window._setCharacterDark = (dark) => {
+    ambient.color.set(dark ? 0x334466 : 0xffffff);
+    ambient.intensity = dark ? 0.5 : 0.7;
+  };
 })();
 
 /* ============================================================
