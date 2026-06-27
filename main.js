@@ -158,28 +158,36 @@
 
   group.position.set(0, -0.25, 0);
 
-  /* Mouse tracking */
+  /* Mouse tracking — body + head both follow cursor */
   let tRY = 0, tRX = 0, cRY = 0, cRX = 0;
+  let tHY = 0, tHX = 0, cHY = 0, cHX = 0;
 
   document.addEventListener('mousemove', e => {
     const nx = (e.clientX / window.innerWidth  - 0.5) * 2;
     const ny = (e.clientY / window.innerHeight - 0.5) * 2;
-    tRY = nx * 0.3;
-    tRX = -ny * 0.15;
-    head.rotation.y = nx * 0.45;
-    head.rotation.x = -ny * 0.3;
-    pupilL.position.set(-0.105 + nx*0.018, 0.04 - ny*0.01, 0.295);
-    pupilR.position.set( 0.105 + nx*0.018, 0.04 - ny*0.01, 0.295);
+    /* Body turns toward mouse */
+    tRY = nx * 0.55;
+    tRX = -ny * 0.18;
+    /* Head tracks more aggressively (applied in animate loop) */
+    tHY = nx * 0.7;
+    tHX = -ny * 0.4;
+    /* Pupils shift */
+    pupilL.position.set(-0.105 + nx*0.022, 0.04 - ny*0.012, 0.295);
+    pupilR.position.set( 0.105 + nx*0.022, 0.04 - ny*0.012, 0.295);
   });
 
   let t = 0;
   function animate() {
     requestAnimationFrame(animate);
     t += 0.016;
-    cRY += (tRY - cRY) * 0.06;
-    cRX += (tRX - cRX) * 0.06;
+    cRY += (tRY - cRY) * 0.05;
+    cRX += (tRX - cRX) * 0.05;
+    cHY += (tHY - cHY) * 0.08;
+    cHX += (tHX - cHX) * 0.08;
     group.rotation.y = cRY;
     group.rotation.x = cRX;
+    head.rotation.y = cHY;
+    head.rotation.x = cHX;
     group.position.y = -0.25 + Math.sin(t * 1.1) * 0.055;
     armL.rotation.z =  0.1 + Math.sin(t * 0.85) * 0.035;
     armR.rotation.z = -0.1 + Math.sin(t * 0.85 + 0.4) * 0.035;
@@ -283,16 +291,17 @@ roleBtns.forEach(b => b.addEventListener('click', () => setRole(b.dataset.role))
 setRole('designer');
 
 /* ============================================================
-   CLICK-TO-SPAWN STICKY NOTES
+   CLICK-TO-SPAWN STICKY NOTES + SVG WIRES
    ============================================================ */
 const notesLayer = document.getElementById('notesLayer');
+const wireLayer  = document.getElementById('wireLayer');
 const hero = document.getElementById('hero');
 
 const notePool = [
   { title: 'Design truth', body: 'Good design is invisible. Bad design is all you see.' },
   { title: 'Automation rule', body: 'If you do it twice, automate it. If you automate it, document it.' },
   { title: 'Client reality', body: 'They don\'t want a logo. They want to be taken seriously.' },
-  { title: 'My stack', body: 'Make.com + Wix + Shopify + Google Workspace = zero-touch ops.' },
+  { title: 'My stack', body: 'Make.com + Wix + Shopify + Workspace = zero-touch ops.' },
   { title: 'On AI', body: 'AI is a tool. Taste is still the rarest skill.' },
   { title: 'Brand tip', body: 'Consistency beats brilliance. Every single time.' },
   { title: 'VA secret', body: 'The best VA is the one you forget is there — because everything just works.' },
@@ -301,17 +310,76 @@ const notePool = [
   { title: 'On SOPs', body: 'An SOP is a gift to your future self.' },
   { title: 'Social media', body: 'Post with purpose or don\'t post at all.' },
   { title: 'La Union life', body: 'Best ideas come at sunrise by the sea. No joke.' },
+  { title: 'Real deliverable', body: 'Decisions made, not recommendations filed.' },
+  { title: 'Zero-touch', body: 'If I built it right, you\'ll forget it exists.' },
 ];
 
 const colors = ['color-1', 'color-2', 'color-3', 'color-4', 'color-5'];
 let noteIndex = 0;
-let spawnedNotes = [];
+let spawnedNotes = []; // { el, rot, timer }
+
+const NOTE_LIFETIME = 90000; // 90 seconds
+
+function noteCenter(el) {
+  const hr = hero.getBoundingClientRect();
+  const r  = el.getBoundingClientRect();
+  return {
+    x: r.left - hr.left + r.width  / 2,
+    y: r.top  - hr.top  + r.height / 2
+  };
+}
+
+function drawWires() {
+  wireLayer.innerHTML = '';
+  if (spawnedNotes.length < 2) return;
+
+  for (let i = 0; i < spawnedNotes.length - 1; i++) {
+    const a = noteCenter(spawnedNotes[i].el);
+    const b = noteCenter(spawnedNotes[i + 1].el);
+
+    const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+    line.setAttribute('x1', a.x); line.setAttribute('y1', a.y);
+    line.setAttribute('x2', b.x); line.setAttribute('y2', b.y);
+    line.setAttribute('class', 'wire-line');
+    wireLayer.appendChild(line);
+
+    /* Animated dot along the line */
+    const dot = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+    dot.setAttribute('r', 3.5);
+    dot.setAttribute('class', 'wire-dot');
+    const anim = document.createElementNS('http://www.w3.org/2000/svg', 'animateMotion');
+    anim.setAttribute('dur', (2 + Math.random() * 2).toFixed(1) + 's');
+    anim.setAttribute('repeatCount', 'indefinite');
+    anim.setAttribute('path', `M${a.x},${a.y} L${b.x},${b.y}`);
+    dot.appendChild(anim);
+    wireLayer.appendChild(dot);
+
+    /* Endpoint dots */
+    [a, b].forEach(p => {
+      const d = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+      d.setAttribute('cx', p.x); d.setAttribute('cy', p.y);
+      d.setAttribute('r', 3); d.setAttribute('class', 'wire-dot');
+      wireLayer.appendChild(d);
+    });
+  }
+}
+
+function removeNote(entry) {
+  clearTimeout(entry.timer);
+  entry.el.style.opacity = '0';
+  entry.el.style.transition = 'opacity 0.6s';
+  setTimeout(() => {
+    entry.el.remove();
+    spawnedNotes = spawnedNotes.filter(n => n !== entry);
+    drawWires();
+  }, 600);
+}
 
 function spawnNote(x, y) {
   const data = notePool[noteIndex % notePool.length];
   noteIndex++;
 
-  const rot = (Math.random() - 0.5) * 12;
+  const rot = (Math.random() - 0.5) * 14;
   const color = colors[Math.floor(Math.random() * colors.length)];
 
   const el = document.createElement('div');
@@ -333,7 +401,12 @@ function spawnNote(x, y) {
   `;
 
   notesLayer.appendChild(el);
-  spawnedNotes.push(el);
+
+  const entry = { el, rot };
+  entry.timer = setTimeout(() => removeNote(entry), NOTE_LIFETIME);
+  spawnedNotes.push(entry);
+
+  drawWires();
 
   /* Drag */
   let dragging = false, ox = 0, oy = 0;
@@ -351,24 +424,23 @@ function spawnNote(x, y) {
     const hr = hero.getBoundingClientRect();
     el.style.left = (e.clientX - hr.left - ox) + 'px';
     el.style.top  = (e.clientY - hr.top  - oy) + 'px';
+    drawWires();
   });
   document.addEventListener('mouseup', () => {
     if (!dragging) return;
     dragging = false;
     el.style.zIndex = 10;
     el.style.transform = `rotate(${rot}deg)`;
+    drawWires();
   });
 
-  /* Remove oldest if too many */
-  if (spawnedNotes.length > 12) {
-    const old = spawnedNotes.shift();
-    old.style.opacity = '0';
-    old.style.transition = 'opacity 0.3s';
-    setTimeout(() => old.remove(), 300);
+  /* Cap at 10 visible notes */
+  if (spawnedNotes.length > 10) {
+    removeNote(spawnedNotes[0]);
   }
 }
 
-/* Listen for clicks on hero (not on buttons/links/notes) */
+/* Listen for clicks on hero */
 hero.addEventListener('click', e => {
   if (e.target.closest('button') || e.target.closest('a') ||
       e.target.closest('.spawned-note') || e.target.closest('.profile-note') ||
