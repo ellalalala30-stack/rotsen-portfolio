@@ -58,27 +58,15 @@
   function onLoad(gltf) {
     const model = gltf.scene;
 
-    /* Auto-centre at feet */
-    const box3 = new THREE.Box3().setFromObject(model);
-    const size = new THREE.Vector3();
-    const centre = new THREE.Vector3();
-    box3.getSize(size);
-    box3.getCenter(centre);
-    const h = size.y;
-
-    model.position.set(-centre.x, -box3.min.y, -centre.z);
-
-    /* Mirror: face left toward hero text */
-    charGroup = new THREE.Group();
-    charGroup.scale.x = -1;
-    charGroup.add(model);
-    scene.add(charGroup);
-
-    /* Camera: tight full-body frame */
-    const dist = h * 1.2;
-    camera.position.set(0, h * 0.5, dist);
-    camera.lookAt(0, h * 0.45, 0);
-    groundDisc.position.y = 0.01;
+    /* Start animation first so skinned mesh bones settle into pose */
+    if (gltf.animations && gltf.animations.length > 0) {
+      mixer = new THREE.AnimationMixer(model);
+      const action = mixer.clipAction(gltf.animations[0]);
+      action.setLoop(THREE.LoopRepeat, Infinity);
+      action.timeScale = 0.9;
+      action.play();
+      mixer.update(0.1); // advance one tick so skeleton is in bind pose
+    }
 
     /* Shadows + materials */
     model.traverse(child => {
@@ -94,26 +82,53 @@
       }
     });
 
-    /* Play walk animation */
-    if (gltf.animations && gltf.animations.length > 0) {
-      mixer = new THREE.AnimationMixer(model);
-      const action = mixer.clipAction(gltf.animations[0]);
-      action.setLoop(THREE.LoopRepeat, Infinity);
-      action.timeScale = 0.9;
-      action.play();
-    }
+    /* Bounding box AFTER skeleton is in pose */
+    const box3 = new THREE.Box3().setFromObject(model);
+    const size   = new THREE.Vector3();
+    const centre = new THREE.Vector3();
+    box3.getSize(size);
+    box3.getCenter(centre);
+    const h = size.y;
+    const w = size.x;
+
+    /* Shift model so feet sit at Y=0, centred on X/Z */
+    model.position.set(-centre.x, -box3.min.y, -centre.z);
+
+    /* Mirror: face left toward hero text */
+    charGroup = new THREE.Group();
+    charGroup.scale.x = -1;
+    charGroup.add(model);
+    scene.add(charGroup);
+
+    /* Camera: fit full character in view with a bit of breathing room */
+    const fovRad  = camera.fov * (Math.PI / 180);
+    const aspect  = camera.aspect;
+    const fitH    = (h / 2) / Math.tan(fovRad / 2); // dist to fit height
+    const fitW    = (w / 2) / Math.tan((fovRad * aspect) / 2); // dist to fit width
+    const dist    = Math.max(fitH, fitW) * 1.15;     // 15% padding
+    camera.position.set(0, h * 0.5, dist);
+    camera.lookAt(0, h * 0.46, 0);
+    camera.updateProjectionMatrix();
+
+    groundDisc.position.y = 0.01;
   }
 
+  /* Try relative path first (works on localhost + GitHub Pages same-origin).
+     GitHub Pages absolute URL as fallback for CodePen / cross-origin embeds. */
   const loader = new THREE.GLTFLoader();
-  const glbUrl = window.location.protocol === 'file:'
-    ? null
-    : (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
-        ? 'character.glb'
-        : 'https://ellalalala30-stack.github.io/rotsen-portfolio/character.glb');
-
-  if (glbUrl) {
-    loader.load(glbUrl, onLoad, null, err => console.warn('GLB load error:', err));
-  }
+  loader.load(
+    'character.glb',
+    onLoad,
+    null,
+    () => {
+      loader.load(
+        'https://ellalalala30-stack.github.io/rotsen-portfolio/character.glb',
+        onLoad,
+        null,
+        err => console.warn('GLB load error:', err)
+      );
+    }
+  );
 
   /* Mouse tracking */
   let tRY = 0, cRY = 0;
