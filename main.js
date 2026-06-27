@@ -340,7 +340,9 @@ function spawnNote(x, y) {
   const el = document.createElement('div');
   el.className = `spawned-note ${color}`;
   el.style.setProperty('--rot', rot + 'deg');
+  el.style.setProperty('--fi', (Math.random() * 1.5).toFixed(2) + 's');
   el.style.transform = `rotate(${rot}deg)`;
+  setTimeout(() => el.classList.add('landed'), 580);
 
   const hr = hero.getBoundingClientRect();
   const px = x - hr.left - 87;
