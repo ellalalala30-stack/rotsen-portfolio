@@ -3,7 +3,7 @@
    ============================================================ */
 
 /* ============================================================
-   THREE.JS — MIXAMO FBX CHARACTER
+   THREE.JS — GLTF WALKING CHARACTER
    ============================================================ */
 (function initThree() {
   const canvas = document.getElementById('threeCanvas');
@@ -13,8 +13,9 @@
   renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 
   const scene = new THREE.Scene();
-  const camera = new THREE.PerspectiveCamera(45, 1, 0.1, 200);
-  camera.position.set(0, 100, 220);
+  const camera = new THREE.PerspectiveCamera(45, 1, 0.1, 100);
+  camera.position.set(0, 1.2, 4.5);
+  camera.lookAt(0, 1.0, 0);
 
   function resize() {
     const w = canvas.parentElement.clientWidth;
@@ -29,94 +30,57 @@
   /* Lights */
   const ambient = new THREE.AmbientLight(0xffffff, 0.7);
   scene.add(ambient);
-
-  const key = new THREE.DirectionalLight(0xfff5e0, 1.6);
-  key.position.set(-80, 200, 150);
+  const key = new THREE.DirectionalLight(0xfff5e0, 1.8);
+  key.position.set(-3, 6, 5);
   key.castShadow = true;
   key.shadow.mapSize.set(1024, 1024);
   scene.add(key);
-
-  const fill = new THREE.PointLight(0xf5a623, 1.0, 600);
-  fill.position.set(120, 100, 100);
+  const fill = new THREE.DirectionalLight(0xd0e8ff, 0.5);
+  fill.position.set(4, 2, 2);
   scene.add(fill);
-
-  const rim = new THREE.DirectionalLight(0x88ccff, 0.5);
-  rim.position.set(80, 120, -100);
+  const rim = new THREE.DirectionalLight(0xffa040, 0.35);
+  rim.position.set(0, 3, -4);
   scene.add(rim);
 
-  /* Shadow ground */
+  /* Ground shadow */
   const ground = new THREE.Mesh(
-    new THREE.CircleGeometry(60, 32),
-    new THREE.MeshBasicMaterial({ color: 0x000000, transparent: true, opacity: 0.12 })
+    new THREE.CircleGeometry(1.2, 32),
+    new THREE.MeshBasicMaterial({ color: 0x000000, transparent: true, opacity: 0.10 })
   );
   ground.rotation.x = -Math.PI / 2;
-  ground.position.y = 0;
+  ground.position.y = 0.01;
   scene.add(ground);
 
-  /* FBX Character */
-  const loader = new THREE.FBXLoader();
+  /* Load GLTF character with built-in walk animation */
   let mixer = null;
-  let characterGroup = null;
+  const loader = new THREE.GLTFLoader();
+  loader.load(
+    'https://threejs.org/examples/models/gltf/Soldier.glb',
+    gltf => {
+      const model = gltf.scene;
+      model.traverse(c => { if (c.isMesh) { c.castShadow = true; c.receiveShadow = true; } });
+      scene.add(model);
 
-  loader.load('character.fbx', fbx => {
-    fbx.scale.setScalar(1);
-
-    /* Centre at feet level */
-    const box3 = new THREE.Box3().setFromObject(fbx);
-    const centre = new THREE.Vector3();
-    box3.getCenter(centre);
-    const height = box3.max.y - box3.min.y;
-    fbx.position.set(-centre.x, -box3.min.y, -centre.z);
-
-    characterGroup = new THREE.Group();
-    characterGroup.add(fbx);
-    scene.add(characterGroup);
-
-    /* Pull camera back so character occupies ~75% of frame height */
-    camera.position.set(0, height * 0.5, height * 1.7);
-    camera.lookAt(0, height * 0.46, 0);
-    camera.updateProjectionMatrix();
-
-    fbx.traverse(child => {
-      if (child.isMesh) {
-        child.castShadow = true;
-        child.receiveShadow = true;
-        if (child.material) {
-          const mats = Array.isArray(child.material) ? child.material : [child.material];
-          mats.forEach(m => { m.side = THREE.DoubleSide; m.roughness = 0.75; m.metalness = 0.05; });
-        }
-      }
-    });
-
-    /* Seamless continuous walk loop */
-    if (fbx.animations && fbx.animations.length > 0) {
-      mixer = new THREE.AnimationMixer(fbx);
-      const action = mixer.clipAction(fbx.animations[0]);
+      /* Play Walk animation (index 3 in Soldier.glb) */
+      mixer = new THREE.AnimationMixer(model);
+      const walkClip = gltf.animations.find(a => a.name === 'Walk') || gltf.animations[0];
+      const action = mixer.clipAction(walkClip);
       action.setLoop(THREE.LoopRepeat, Infinity);
-      action.clampWhenFinished = false;
-      action.timeScale = 0.85;
       action.play();
-    }
-  },
-  xhr => {},
-  err => { console.warn('FBX load error:', err); }
+    },
+    null,
+    err => console.warn('GLTF load error', err)
   );
 
   const clock = new THREE.Clock();
-
   function animate() {
     requestAnimationFrame(animate);
-    const delta = clock.getDelta();
-    if (mixer) mixer.update(delta);
+    if (mixer) mixer.update(clock.getDelta());
     renderer.render(scene, camera);
   }
   animate();
 
-  /* Dark mode */
-  window._setCharacterDark = (dark) => {
-    ambient.color.set(dark ? 0x334466 : 0xffffff);
-    ambient.intensity = dark ? 0.5 : 0.7;
-  };
+  window._setCharacterDark = (dark) => { ambient.intensity = dark ? 0.4 : 0.7; };
 })();
 
 /* ============================================================
