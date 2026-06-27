@@ -51,23 +51,17 @@
 
   const loader = new THREE.FBXLoader();
   let mixer = null;
-  let characterGroup = null;
 
-  /* Walking_1.fbx from Mixamo contains both the character mesh and
-     the walking animation baked in — load it as a single file */
-  loader.load('Walking_1.fbx', fbx => {
+  /* Step 1: load character mesh from character.fbx */
+  loader.load('character.fbx', fbx => {
     fbx.scale.setScalar(1);
     const box3 = new THREE.Box3().setFromObject(fbx);
     const centre = new THREE.Vector3();
     box3.getCenter(centre);
     const height = box3.max.y - box3.min.y;
     fbx.position.set(-centre.x, -box3.min.y, -centre.z);
+    scene.add(fbx);
 
-    characterGroup = new THREE.Group();
-    characterGroup.add(fbx);
-    scene.add(characterGroup);
-
-    /* Camera shows full body — pull back enough to see feet */
     camera.position.set(0, height * 0.52, height * 1.55);
     camera.lookAt(0, height * 0.48, 0);
     camera.updateProjectionMatrix();
@@ -83,14 +77,27 @@
       }
     });
 
-    if (fbx.animations && fbx.animations.length > 0) {
-      mixer = new THREE.AnimationMixer(fbx);
-      const action = mixer.clipAction(fbx.animations[0]);
-      action.setLoop(THREE.LoopRepeat, Infinity);
-      action.timeScale = 1.0;
-      action.play();
-    }
-  }, null, err => console.warn('FBX error:', err));
+    mixer = new THREE.AnimationMixer(fbx);
+
+    /* Step 2: load walking animation and apply to character mixer.
+       Mixamo standardises bone names so the clip targets correctly. */
+    const animLoader = new THREE.FBXLoader();
+    animLoader.load('Walking_1.fbx', animFbx => {
+      if (animFbx.animations && animFbx.animations.length > 0) {
+        const action = mixer.clipAction(animFbx.animations[0]);
+        action.setLoop(THREE.LoopRepeat, Infinity);
+        action.timeScale = 1.0;
+        action.play();
+      }
+    }, null, () => {
+      /* Fallback to any animation embedded in character.fbx */
+      if (fbx.animations && fbx.animations.length > 0) {
+        const action = mixer.clipAction(fbx.animations[0]);
+        action.setLoop(THREE.LoopRepeat, Infinity);
+        action.play();
+      }
+    });
+  }, null, err => console.warn('character.fbx load error:', err));
 
   const clock = new THREE.Clock();
   function animate() {
@@ -243,9 +250,9 @@ function getNotePool() {
 
 const colors = ['color-1', 'color-2', 'color-3', 'color-4', 'color-5'];
 let noteIndex = 0;
-let spawnedNotes = []; // { el, rot, timer }
+let spawnedNotes = [];
 
-const NOTE_LIFETIME = 10000; // 10 seconds
+const NOTE_LIFETIME = 10000;
 
 function noteCenter(el) {
   const hr = hero.getBoundingClientRect();
@@ -270,7 +277,6 @@ function drawWires() {
     line.setAttribute('class', 'wire-line');
     wireLayer.appendChild(line);
 
-    /* Animated dot along the line */
     const dot = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
     dot.setAttribute('r', 3.5);
     dot.setAttribute('class', 'wire-dot');
@@ -281,7 +287,6 @@ function drawWires() {
     dot.appendChild(anim);
     wireLayer.appendChild(dot);
 
-    /* Endpoint dots */
     [a, b].forEach(p => {
       const d = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
       d.setAttribute('cx', p.x); d.setAttribute('cy', p.y);
@@ -340,7 +345,6 @@ function spawnNote(x, y) {
 
   drawWires();
 
-  /* Drag */
   let dragging = false, ox = 0, oy = 0;
   el.addEventListener('mousedown', e => {
     dragging = true;
@@ -366,13 +370,11 @@ function spawnNote(x, y) {
     drawWires();
   });
 
-  /* Cap at 10 visible notes */
   if (spawnedNotes.length > 10) {
     removeNote(spawnedNotes[0]);
   }
 }
 
-/* Listen for clicks on hero */
 hero.addEventListener('click', e => {
   if (e.target.closest('button') || e.target.closest('a') ||
       e.target.closest('.spawned-note') || e.target.closest('.profile-note') ||
@@ -387,7 +389,6 @@ hero.addEventListener('click', e => {
 const profileNote = document.getElementById('profileNote');
 const profileCard = document.getElementById('profileCard');
 
-/* Backdrop */
 const backdrop = document.createElement('div');
 backdrop.className = 'card-backdrop hidden';
 document.body.appendChild(backdrop);
