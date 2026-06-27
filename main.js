@@ -78,9 +78,7 @@
     camera.updateProjectionMatrix();
 
     fbx.traverse(child => {
-      if (child.isMesh || child.isSkinnedMesh) {
-        /* Hide joint sphere visualizers baked into Mixamo FBX — keep only skin mesh */
-        if (!child.isSkinnedMesh) { child.visible = false; return; }
+      if (child.isMesh) {
         child.castShadow = true;
         child.receiveShadow = true;
         if (child.material) {
