@@ -51,64 +51,69 @@
   groundDisc.rotation.x = -Math.PI / 2;
   scene.add(groundDisc);
 
-  /* Load GLB */
+  /* Load GLB — try local first, fall back to GitHub Pages */
   let mixer = null;
   let charGroup = null;
-  let baseY = 0;
+
+  function onLoad(gltf) {
+    const model = gltf.scene;
+
+    /* Auto-centre at feet */
+    const box3 = new THREE.Box3().setFromObject(model);
+    const size = new THREE.Vector3();
+    const centre = new THREE.Vector3();
+    box3.getSize(size);
+    box3.getCenter(centre);
+    const h = size.y;
+
+    model.position.set(-centre.x, -box3.min.y, -centre.z);
+
+    /* Mirror: face left toward hero text */
+    charGroup = new THREE.Group();
+    charGroup.scale.x = -1;
+    charGroup.add(model);
+    scene.add(charGroup);
+
+    /* Camera: tight full-body frame */
+    const dist = h * 1.2;
+    camera.position.set(0, h * 0.5, dist);
+    camera.lookAt(0, h * 0.45, 0);
+    groundDisc.position.y = 0.01;
+
+    /* Shadows + materials */
+    model.traverse(child => {
+      if (child.isMesh) {
+        child.castShadow = true;
+        child.receiveShadow = true;
+        if (child.material) {
+          const mats = Array.isArray(child.material) ? child.material : [child.material];
+          mats.forEach(m => {
+            if (m.roughness !== undefined) m.roughness = Math.min(m.roughness, 0.85);
+          });
+        }
+      }
+    });
+
+    /* Play walk animation */
+    if (gltf.animations && gltf.animations.length > 0) {
+      mixer = new THREE.AnimationMixer(model);
+      const action = mixer.clipAction(gltf.animations[0]);
+      action.setLoop(THREE.LoopRepeat, Infinity);
+      action.timeScale = 0.9;
+      action.play();
+    }
+  }
 
   const loader = new THREE.GLTFLoader();
-  loader.load(
-    'https://ellalalala30-stack.github.io/rotsen-portfolio/character.glb',
-    gltf => {
-      const model = gltf.scene;
+  const glbUrl = window.location.protocol === 'file:'
+    ? null
+    : (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+        ? 'character.glb'
+        : 'https://ellalalala30-stack.github.io/rotsen-portfolio/character.glb');
 
-      /* Auto-centre at feet */
-      const box3 = new THREE.Box3().setFromObject(model);
-      const size = new THREE.Vector3();
-      const centre = new THREE.Vector3();
-      box3.getSize(size);
-      box3.getCenter(centre);
-      const h = size.y;
-
-      model.position.set(-centre.x, -box3.min.y, -centre.z);
-
-      /* Mirror: face left toward hero text */
-      charGroup = new THREE.Group();
-      charGroup.scale.x = -1; // mirror on X axis
-      charGroup.add(model);
-      scene.add(charGroup);
-
-      /* Camera: frame full body */
-      camera.position.set(0, h * 0.52, h * 1.5);
-      camera.lookAt(0, h * 0.48, 0);
-      groundDisc.position.y = 0.01;
-
-      baseY = 0;
-
-      /* Shadows */
-      model.traverse(child => {
-        if (child.isMesh) {
-          child.castShadow = true;
-          child.receiveShadow = true;
-          if (child.material) {
-            const mats = Array.isArray(child.material) ? child.material : [child.material];
-            mats.forEach(m => { m.roughness = Math.min(m.roughness ?? 0.8, 0.85); });
-          }
-        }
-      });
-
-      /* Play walk animation */
-      if (gltf.animations && gltf.animations.length > 0) {
-        mixer = new THREE.AnimationMixer(model);
-        const action = mixer.clipAction(gltf.animations[0]);
-        action.setLoop(THREE.LoopRepeat, Infinity);
-        action.timeScale = 0.9;
-        action.play();
-      }
-    },
-    null,
-    err => console.warn('GLB load error:', err)
-  );
+  if (glbUrl) {
+    loader.load(glbUrl, onLoad, null, err => console.warn('GLB load error:', err));
+  }
 
   /* Mouse tracking */
   let tRY = 0, cRY = 0;
@@ -228,22 +233,45 @@ const notesLayer = document.getElementById('notesLayer');
 const wireLayer  = document.getElementById('wireLayer');
 const hero = document.getElementById('hero');
 
-const notePool = [
-  { title: 'Design truth', body: 'Good design is invisible. Bad design is all you see.' },
-  { title: 'Automation rule', body: 'If you do it twice, automate it. If you automate it, document it.' },
-  { title: 'Client reality', body: 'They don\'t want a logo. They want to be taken seriously.' },
-  { title: 'My stack', body: 'Make.com + Wix + Shopify + Workspace = zero-touch ops.' },
-  { title: 'On AI', body: 'AI is a tool. Taste is still the rarest skill.' },
-  { title: 'Brand tip', body: 'Consistency beats brilliance. Every single time.' },
-  { title: 'VA secret', body: 'The best VA is the one you forget is there — because everything just works.' },
-  { title: 'Systems > hustle', body: 'Build the system once. Let it run while you sleep.' },
-  { title: 'Visual language', body: 'Every pixel is a decision. Make them count.' },
-  { title: 'On SOPs', body: 'An SOP is a gift to your future self.' },
-  { title: 'Social media', body: 'Post with purpose or don\'t post at all.' },
-  { title: 'La Union life', body: 'Best ideas come at sunrise by the sea. No joke.' },
-  { title: 'Real deliverable', body: 'Decisions made, not recommendations filed.' },
-  { title: 'Zero-touch', body: 'If I built it right, you\'ll forget it exists.' },
+/* Professional tone — light/default mode */
+const notePoolPro = [
+  { title: 'Design Principle', body: 'Effective design communicates without explanation. If it needs one, reconsider it.' },
+  { title: 'Automation Standard', body: 'Every repeated manual task is an unresolved process gap. We resolve it once.' },
+  { title: 'Client Insight', body: 'Clients don\'t commission a logo. They invest in perceived authority.' },
+  { title: 'Operational Stack', body: 'Make.com · Shopify · Google Workspace — fully integrated, zero manual input.' },
+  { title: 'On AI Execution', body: 'AI accelerates output. Judgment still determines quality.' },
+  { title: 'Brand Consistency', body: 'Reliable visual language outperforms clever one-offs. Always.' },
+  { title: 'Executive Support', body: 'The best executive VA removes friction before it reaches the decision-maker.' },
+  { title: 'Systems Design', body: 'A well-architected workflow runs unattended. That\'s the goal.' },
+  { title: 'Visual Intent', body: 'Every design element carries a decision. Ensure each one is intentional.' },
+  { title: 'Documentation', body: 'If the process isn\'t written down, it doesn\'t exist as a system.' },
+  { title: 'Content Strategy', body: 'Publish with a defined objective or defer until one exists.' },
+  { title: 'Platform Migration', body: 'Transition planning preserves SEO equity and enrollment continuity.' },
+  { title: 'Deliverables', body: 'Outcomes, not activity reports. That\'s what gets measured.' },
+  { title: 'Zero-Touch Ops', body: 'Infrastructure built correctly requires no ongoing intervention.' },
 ];
+
+/* Casual / warm tone — no-fluff / dark mode */
+const notePoolCasual = [
+  { title: 'real talk', body: 'Good design just feels right. You can\'t always explain it — you just know.' },
+  { title: 'automate it', body: 'If you\'re doing it twice, something\'s already broken. Let\'s fix that.' },
+  { title: 'client truth', body: 'They don\'t need a pretty logo. They need people to trust them.' },
+  { title: 'my setup', body: 'Make.com + Shopify + Workspace = I handle it once and walk away.' },
+  { title: 'on AI', body: 'AI is a shortcut, not a replacement. Taste still wins.' },
+  { title: 'brand game', body: 'Showing up the same way every time is the whole strategy.' },
+  { title: 'VA life', body: 'The best support is invisible. You just notice things running smoother.' },
+  { title: 'build it right', body: 'A good system doesn\'t need you checking on it. That\'s the whole point.' },
+  { title: 'every pixel', body: 'Nothing should be there by accident. If it\'s there, it\'s a choice.' },
+  { title: 'write it down', body: 'No SOP = you\'ll be re-explaining this forever. Document it.' },
+  { title: 'post with purpose', body: 'If you don\'t know why you\'re posting it, neither will they.' },
+  { title: 'La Union mornings', body: 'Best ideas hit at sunrise by the water. Honestly, no joke.' },
+  { title: 'get it done', body: 'Decisions, not decks. Results, not reports.' },
+  { title: 'zero touch', body: 'Built it right once. Hasn\'t needed me since. Love that for us.' },
+];
+
+function getNotePool() {
+  return currentMode === 'dark' ? notePoolCasual : notePoolPro;
+}
 
 const colors = ['color-1', 'color-2', 'color-3', 'color-4', 'color-5'];
 let noteIndex = 0;
@@ -309,7 +337,8 @@ function removeNote(entry) {
 }
 
 function spawnNote(x, y) {
-  const data = notePool[noteIndex % notePool.length];
+  const pool = getNotePool();
+  const data = pool[noteIndex % pool.length];
   noteIndex++;
 
   const rot = (Math.random() - 0.5) * 14;
