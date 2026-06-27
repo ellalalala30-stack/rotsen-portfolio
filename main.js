@@ -54,11 +54,20 @@
   let charGroup = null;
 
   const loader = new THREE.FBXLoader();
-  const fbxUrl = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
-    ? 'character.fbx'
-    : 'https://ellalalala30-stack.github.io/rotsen-portfolio/character.fbx';
 
-  loader.load(fbxUrl, fbx => {
+  /* Try relative path first, fall back to GitHub Pages, then raw GitHub */
+  const urls = [
+    'character.fbx',
+    'https://ellalalala30-stack.github.io/rotsen-portfolio/character.fbx',
+    'https://raw.githubusercontent.com/ellalalala30-stack/rotsen-portfolio/main/character.fbx',
+  ];
+
+  function tryLoad(index) {
+    if (index >= urls.length) { console.warn('All FBX URLs failed'); return; }
+    loader.load(urls[index], onFBXLoad, null, () => tryLoad(index + 1));
+  }
+
+  function onFBXLoad(fbx) {
     /* Tick animation before measuring so skeleton is in walking pose */
     if (fbx.animations && fbx.animations.length > 0) {
       mixer = new THREE.AnimationMixer(fbx);
@@ -104,9 +113,9 @@
     camera.updateProjectionMatrix();
 
     groundDisc.position.y = box3.min.y + 0.5;
-  },
-  null,
-  err => console.warn('FBX load error:', err));
+  }
+
+  tryLoad(0);
 
   /* Mouse tracking */
   let tRY = 0, cRY = 0;
