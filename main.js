@@ -3,16 +3,18 @@
    ============================================================ */
 
 /* ============================================================
-   THREE.JS — 3D CHARACTER (right side)
+   THREE.JS — MIXAMO FBX CHARACTER
    ============================================================ */
 (function initThree() {
   const canvas = document.getElementById('threeCanvas');
   const renderer = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: true });
   renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+  renderer.shadowMap.enabled = true;
+  renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 
   const scene = new THREE.Scene();
-  const camera = new THREE.PerspectiveCamera(55, 1, 0.1, 100);
-  camera.position.set(0, 1.2, 4.5);
+  const camera = new THREE.PerspectiveCamera(45, 1, 0.1, 200);
+  camera.position.set(0, 100, 220);
 
   function resize() {
     const w = canvas.parentElement.clientWidth;
@@ -25,180 +27,118 @@
   resize();
 
   /* Lights */
-  scene.add(new THREE.AmbientLight(0xffffff, 0.6));
-  const key = new THREE.DirectionalLight(0xfff5e0, 1.4);
-  key.position.set(-3, 5, 4);
+  const ambient = new THREE.AmbientLight(0xffffff, 0.7);
+  scene.add(ambient);
+
+  const key = new THREE.DirectionalLight(0xfff5e0, 1.6);
+  key.position.set(-80, 200, 150);
+  key.castShadow = true;
+  key.shadow.mapSize.set(1024, 1024);
   scene.add(key);
-  const fill = new THREE.PointLight(0xf5a623, 0.8, 12);
-  fill.position.set(3, 2, 3);
+
+  const fill = new THREE.PointLight(0xf5a623, 1.0, 600);
+  fill.position.set(120, 100, 100);
   scene.add(fill);
-  const rim = new THREE.DirectionalLight(0x88ccff, 0.4);
-  rim.position.set(2, 3, -3);
+
+  const rim = new THREE.DirectionalLight(0x88ccff, 0.5);
+  rim.position.set(80, 120, -100);
   scene.add(rim);
 
-  /* Helpers */
-  function box(w, h, d, mat, x, y, z, rx=0, ry=0, rz=0) {
-    const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mat);
-    m.position.set(x, y, z); m.rotation.set(rx, ry, rz);
-    return m;
-  }
-  function sphere(r, mat, x, y, z) {
-    const m = new THREE.Mesh(new THREE.SphereGeometry(r, 20, 20), mat);
-    m.position.set(x, y, z); return m;
-  }
-  function cyl(rt, rb, h, mat, x, y, z) {
-    const m = new THREE.Mesh(new THREE.CylinderGeometry(rt, rb, h, 14), mat);
-    m.position.set(x, y, z); return m;
-  }
-
-  /* Materials */
-  const SKIN  = new THREE.MeshStandardMaterial({ color: 0xd4a574, roughness: 0.7 });
-  const SHIRT = new THREE.MeshStandardMaterial({ color: 0x1a1a2e, roughness: 0.6 });
-  const PANTS = new THREE.MeshStandardMaterial({ color: 0x16213e, roughness: 0.8 });
-  const SHOE  = new THREE.MeshStandardMaterial({ color: 0x111111, roughness: 0.5, metalness: 0.1 });
-  const HAIR  = new THREE.MeshStandardMaterial({ color: 0x1a0a00, roughness: 0.9 });
-  const GOLD  = new THREE.MeshStandardMaterial({ color: 0xf5a623, roughness: 0.3, metalness: 0.5 });
-  const GLASS = new THREE.MeshStandardMaterial({ color: 0x88aacc, roughness: 0.1, transparent: true, opacity: 0.55 });
-  const LAPMAT = new THREE.MeshStandardMaterial({ color: 0x222222, roughness: 0.4, metalness: 0.7 });
-  const SCREEN = new THREE.MeshStandardMaterial({ color: 0x001133, emissive: 0x0033aa, emissiveIntensity: 0.9 });
-
-  const group = new THREE.Group();
-  scene.add(group);
-
-  /* Torso */
-  group.add(box(0.7, 0.9, 0.42, SHIRT, 0, 0, 0));
-  group.add(box(0.72, 0.08, 0.44, GOLD, 0, -0.38, 0)); // belt
-  group.add(box(0.12, 0.1, 0.02, GOLD, -0.22, 0.12, 0.22)); // pocket
-
-  /* Neck */
-  group.add(cyl(0.1, 0.1, 0.16, SKIN, 0, 0.52, 0));
-
-  /* Head group */
-  const head = new THREE.Group();
-  head.position.set(0, 0.62, 0);
-  group.add(head);
-
-  head.add(sphere(0.31, SKIN, 0, 0, 0));
-
-  /* Hair dome */
-  const hairDome = new THREE.Mesh(
-    new THREE.SphereGeometry(0.32, 20, 20, 0, Math.PI*2, 0, Math.PI*0.52),
-    HAIR
+  /* Shadow ground */
+  const ground = new THREE.Mesh(
+    new THREE.CircleGeometry(60, 32),
+    new THREE.MeshBasicMaterial({ color: 0x000000, transparent: true, opacity: 0.12 })
   );
-  hairDome.position.y = 0.03;
-  head.add(hairDome);
-  head.add(box(0.16, 0.09, 0.1, HAIR, 0, 0.26, 0.24, -0.28));
+  ground.rotation.x = -Math.PI / 2;
+  ground.position.y = 0;
+  scene.add(ground);
 
-  /* Eyes */
-  const EW = new THREE.MeshStandardMaterial({ color: 0xffffff });
-  const EP = new THREE.MeshStandardMaterial({ color: 0x0a0500 });
-  const eyeWL = sphere(0.062, EW, -0.105, 0.04, 0.27);
-  const eyeWR = sphere(0.062, EW,  0.105, 0.04, 0.27);
-  const pupilL = sphere(0.038, EP, -0.105, 0.04, 0.295);
-  const pupilR = sphere(0.038, EP,  0.105, 0.04, 0.295);
-  head.add(eyeWL, eyeWR, pupilL, pupilR);
+  /* FBX Character */
+  const loader = new THREE.FBXLoader();
+  let mixer = null;
+  let characterGroup = null;
 
-  /* Glasses */
-  const glassL = new THREE.Mesh(new THREE.TorusGeometry(0.068, 0.011, 8, 18), GLASS);
-  glassL.position.set(-0.105, 0.04, 0.28);
-  const glassR = new THREE.Mesh(new THREE.TorusGeometry(0.068, 0.011, 8, 18), GLASS);
-  glassR.position.set(0.105, 0.04, 0.28);
-  head.add(glassL, glassR);
-  head.add(box(0.05, 0.01, 0.01, GLASS, 0, 0.04, 0.29));
+  loader.load('character.fbx', fbx => {
+    fbx.scale.setScalar(1);
 
-  /* Brows */
-  head.add(box(0.09, 0.018, 0.018, HAIR, -0.105, 0.15, 0.29, 0, 0, 0.1));
-  head.add(box(0.09, 0.018, 0.018, HAIR,  0.105, 0.15, 0.29, 0, 0, -0.1));
+    /* Centre the model at feet level */
+    const box3 = new THREE.Box3().setFromObject(fbx);
+    const centre = new THREE.Vector3();
+    box3.getCenter(centre);
+    const height = box3.max.y - box3.min.y;
+    fbx.position.set(-centre.x, -box3.min.y, -centre.z);
 
-  /* Nose & mouth */
-  head.add(sphere(0.036, SKIN, 0, -0.02, 0.305));
-  const mg = new THREE.TorusGeometry(0.055, 0.013, 8, 10, Math.PI);
-  const mouthM = new THREE.Mesh(mg, new THREE.MeshStandardMaterial({ color: 0x7a2f2f }));
-  mouthM.position.set(0, -0.1, 0.295);
-  mouthM.rotation.z = Math.PI;
-  head.add(mouthM);
+    /* Wrap in a group so we can rotate for mouse tracking */
+    characterGroup = new THREE.Group();
+    characterGroup.add(fbx);
+    scene.add(characterGroup);
 
-  /* Ears */
-  head.add(sphere(0.065, SKIN, -0.31, 0, 0));
-  head.add(sphere(0.065, SKIN,  0.31, 0, 0));
+    /* Camera framing — fit full body */
+    camera.position.set(0, height * 0.55, height * 1.35);
+    camera.lookAt(0, height * 0.5, 0);
 
-  /* Arms */
-  const armL = new THREE.Group();
-  armL.position.set(-0.45, 0.26, 0);
-  group.add(armL);
-  armL.add(box(0.2, 0.62, 0.22, SHIRT, 0, -0.27, 0));
-  armL.add(sphere(0.12, SKIN, 0, -0.62, 0));
+    /* Enable shadows on all meshes */
+    fbx.traverse(child => {
+      if (child.isMesh) {
+        child.castShadow = true;
+        child.receiveShadow = true;
+        if (child.material) {
+          const mats = Array.isArray(child.material) ? child.material : [child.material];
+          mats.forEach(m => {
+            m.roughness = 0.75;
+            m.metalness = 0.05;
+          });
+        }
+      }
+    });
 
-  const armR = new THREE.Group();
-  armR.position.set(0.45, 0.26, 0);
-  group.add(armR);
-  armR.add(box(0.2, 0.62, 0.22, SHIRT, 0, -0.27, 0));
-  armR.add(sphere(0.12, SKIN, 0, -0.62, 0));
+    /* Play walk animation */
+    if (fbx.animations && fbx.animations.length > 0) {
+      mixer = new THREE.AnimationMixer(fbx);
+      const action = mixer.clipAction(fbx.animations[0]);
+      action.setLoop(THREE.LoopRepeat, Infinity);
+      action.timeScale = 0.85;
+      action.play();
+    }
+  },
+  xhr => { /* progress — optional */ },
+  err => { console.warn('FBX load error:', err); }
+  );
 
-  /* Laptop */
-  const lap = new THREE.Group();
-  lap.position.set(0.42, -0.38, 0.28);
-  lap.rotation.x = 0.28;
-  group.add(lap);
-  lap.add(box(0.34, 0.24, 0.02, LAPMAT, 0, 0, 0));
-  const scr = box(0.3, 0.2, 0.005, SCREEN, 0, 0, 0.014);
-  lap.add(scr);
-  lap.add(box(0.18, 0.011, 0.004, new THREE.MeshStandardMaterial({ color: 0xf5a623, emissive: 0xf5a623, emissiveIntensity: 1 }), -0.02, 0.04, 0.02));
-  lap.add(box(0.13, 0.011, 0.004, new THREE.MeshStandardMaterial({ color: 0x44ccff, emissive: 0x44ccff, emissiveIntensity: 1 }), -0.04, -0.01, 0.02));
-  lap.add(box(0.15, 0.011, 0.004, new THREE.MeshStandardMaterial({ color: 0x44ccff, emissive: 0x44ccff, emissiveIntensity: 1 }), -0.03, -0.06, 0.02));
-
-  /* Legs */
-  const legL = new THREE.Group(); legL.position.set(-0.18, -0.44, 0); group.add(legL);
-  legL.add(box(0.27, 0.64, 0.27, PANTS, 0, -0.32, 0));
-  legL.add(box(0.25, 0.13, 0.35, SHOE, 0, -0.67, 0.05));
-
-  const legR = new THREE.Group(); legR.position.set(0.18, -0.44, 0); group.add(legR);
-  legR.add(box(0.27, 0.64, 0.27, PANTS, 0, -0.32, 0));
-  legR.add(box(0.25, 0.13, 0.35, SHOE, 0, -0.67, 0.05));
-
-  group.position.set(0, -0.25, 0);
-
-  /* Mouse tracking — body + head both follow cursor */
+  /* Mouse tracking */
   let tRY = 0, tRX = 0, cRY = 0, cRX = 0;
-  let tHY = 0, tHX = 0, cHY = 0, cHX = 0;
 
   document.addEventListener('mousemove', e => {
     const nx = (e.clientX / window.innerWidth  - 0.5) * 2;
     const ny = (e.clientY / window.innerHeight - 0.5) * 2;
-    /* Body turns toward mouse */
-    tRY = nx * 0.55;
-    tRX = -ny * 0.18;
-    /* Head tracks more aggressively (applied in animate loop) */
-    tHY = nx * 0.7;
-    tHX = -ny * 0.4;
-    /* Pupils shift */
-    pupilL.position.set(-0.105 + nx*0.022, 0.04 - ny*0.012, 0.295);
-    pupilR.position.set( 0.105 + nx*0.022, 0.04 - ny*0.012, 0.295);
+    tRY = nx * 0.5;
+    tRX = -ny * 0.12;
   });
 
-  let t = 0;
+  const clock = new THREE.Clock();
+
   function animate() {
     requestAnimationFrame(animate);
-    t += 0.016;
-    cRY += (tRY - cRY) * 0.05;
-    cRX += (tRX - cRX) * 0.05;
-    cHY += (tHY - cHY) * 0.08;
-    cHX += (tHX - cHX) * 0.08;
-    group.rotation.y = cRY;
-    group.rotation.x = cRX;
-    head.rotation.y = cHY;
-    head.rotation.x = cHX;
-    group.position.y = -0.25 + Math.sin(t * 1.1) * 0.055;
-    armL.rotation.z =  0.1 + Math.sin(t * 0.85) * 0.035;
-    armR.rotation.z = -0.1 + Math.sin(t * 0.85 + 0.4) * 0.035;
-    scr.material.emissiveIntensity = 0.6 + Math.sin(t * 1.8) * 0.3;
+    const delta = clock.getDelta();
+
+    if (mixer) mixer.update(delta);
+
+    cRY += (tRY - cRY) * 0.04;
+    cRX += (tRX - cRX) * 0.04;
+
+    if (characterGroup) {
+      characterGroup.rotation.y = cRY;
+      characterGroup.rotation.x = cRX;
+    }
+
     renderer.render(scene, camera);
   }
   animate();
 
-  /* Dark mode: change ambient light colour */
+  /* Dark mode */
   window._setCharacterDark = (dark) => {
-    scene.children[0].color.set(dark ? 0x334466 : 0xffffff);
+    ambient.color.set(dark ? 0x334466 : 0xffffff);
+    ambient.intensity = dark ? 0.5 : 0.7;
   };
 })();
 

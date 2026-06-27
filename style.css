@@ -15,7 +15,7 @@
   --accent2:  #e8841a;
   --grid:     rgba(0,0,0,0.06);
   --note-shadow: 4px 6px 16px rgba(0,0,0,0.12);
-  --font:     'Syne', sans-serif;
+  --font:     'Inter', 'Syne', sans-serif;
   --mono:     'Syne Mono', monospace;
 }
 
@@ -264,11 +264,12 @@ body {
 }
 
 .hero-sub {
-  font-size: 1.05rem;
+  font-size: 1.2rem;
   color: var(--muted);
-  max-width: 380px;
+  max-width: 420px;
   margin-bottom: 2rem;
-  line-height: 1.7;
+  line-height: 1.75;
+  font-weight: 400;
   transition: color 0.5s, opacity 0.3s;
 }
 
@@ -502,9 +503,9 @@ section { padding: 6rem 3rem; background: var(--bg); transition: background 0.5s
 }
 
 .track-mid {
-  font-size: 0.88rem;
+  font-size: 0.95rem;
   color: var(--muted);
-  line-height: 1.75;
+  line-height: 1.8;
   padding-top: 0.2rem;
   transition: color 0.5s;
 }
@@ -577,9 +578,9 @@ section { padding: 6rem 3rem; background: var(--bg); transition: background 0.5s
 }
 
 .belief-item p {
-  font-size: 0.85rem;
+  font-size: 0.95rem;
   color: var(--muted);
-  line-height: 1.65;
+  line-height: 1.75;
 }
 
 /* ============================================================
