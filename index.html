@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Rotsen John Vonyl Taningco — Portfolio</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=Syne+Mono&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+<!-- NAV -->
+<nav id="nav">
+  <div class="nav-logo" id="clickTarget">RJVT<span class="dot">.</span></div>
+  <div class="role-toggle">
+    <button class="role-btn active" data-role="designer">Designer</button>
+    <button class="role-btn" data-role="automation">Automation</button>
+    <button class="role-btn" data-role="va">VA</button>
+  </div>
+  <a href="mailto:sentngc@gmail.com" class="nav-contact">Say hello →</a>
+</nav>
+
+<!-- HERO -->
+<section id="hero">
+  <canvas id="threeCanvas"></canvas>
+  <div class="hero-content">
+    <p class="hero-tag" id="heroTag">Graphic Designer · Digital Branding</p>
+    <h1 class="hero-name">ROTSEN<br>JOHN<br>VONYL</h1>
+    <p class="hero-sub" id="heroSub">Bold ideas. Clean execution.<br>I make things look sharp and perform even better.</p>
+    <a href="#work" class="hero-cta">See the work ↓</a>
+  </div>
+  <div class="hero-scroll-hint">scroll</div>
+</section>
+
+<!-- ABOUT STICKY NOTES -->
+<section id="about">
+  <div class="section-label">// About</div>
+  <div class="notes-stage" id="notesStage">
+    <svg id="wires" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"></svg>
+    <div class="note" id="note1" data-connect="note2" style="left:5%;top:10%">
+      <div class="note-pin"></div>
+      <p class="note-role">Graphic Designer</p>
+      <p>4+ years crafting bold visual identities, social content & product design for international clients.</p>
+    </div>
+    <div class="note" id="note2" data-connect="note3" style="left:32%;top:5%">
+      <div class="note-pin"></div>
+      <p class="note-role">Systems Architect</p>
+      <p>Zero-touch automations connecting Wix, Shopify, Make.com, Thinkific & Google Workspace.</p>
+    </div>
+    <div class="note" id="note3" data-connect="note4" style="left:58%;top:12%">
+      <div class="note-pin"></div>
+      <p class="note-role">AI Creative Director</p>
+      <p>Prompt engineering for luxury brand visuals. Higgsfield · Gemini · Nano Banana · ChatGPT.</p>
+    </div>
+    <div class="note" id="note4" style="left:78%;top:6%">
+      <div class="note-pin"></div>
+      <p class="note-role">Executive VA</p>
+      <p>Long-term embedded support — executive workflows, compliance docs, brand operations end-to-end.</p>
+    </div>
+  </div>
+</section>
+
+<!-- WORK / EXPERIENCE -->
+<section id="work">
+  <div class="section-label">// Experience</div>
+
+  <!-- DESIGNER role -->
+  <div class="role-section" data-roles="designer">
+    <div class="exp-grid">
+      <div class="exp-item">
+        <span class="exp-year">2021–2022</span>
+        <div class="exp-body">
+          <h3>Graphic Designer</h3>
+          <p class="exp-company">DRCV Consilio</p>
+          <p>Digital branding & content creation across multiple platforms. Advertisement and product listing design. Photo manipulation for e-commerce. Product manuals, spec stickers & design collaterals.</p>
+          <div class="exp-tags"><span>Photoshop</span><span>Illustrator</span><span>Canva</span><span>Branding</span></div>
+        </div>
+      </div>
+      <div class="exp-item">
+        <span class="exp-year">2022–2026</span>
+        <div class="exp-body">
+          <h3>Social Media Manager / VA</h3>
+          <p class="exp-company">Herway Training Institute</p>
+          <p>Email/SMS marketing campaigns & website design via WIX and Shopify. Social media revamps, content calendars & brand consistency. Copywriting, form layout & video marketing. Product mockups, digital branding & multi-platform content creation.</p>
+          <div class="exp-tags"><span>WIX</span><span>Shopify</span><span>CapCut</span><span>Social Media</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- AUTOMATION role -->
+  <div class="role-section" data-roles="automation">
+    <div class="exp-grid">
+      <div class="exp-item">
+        <span class="exp-year">2023–Now</span>
+        <div class="exp-body">
+          <h3>Digital Ops & Systems Architect</h3>
+          <p class="exp-company">Independent / Freelance</p>
+          <p>Engineered zero-touch student enrollment automation connecting Wix post-purchase triggers, Make.com scenario logic & Google Workspace. Architected conditional email routing dispatching program-specific onboarding. Designed failsafe order-of-operations protocol. Applied staging version control.</p>
+          <div class="exp-tags"><span>Make.com</span><span>Webhooks</span><span>API/OAuth</span><span>JSON</span></div>
+        </div>
+      </div>
+      <div class="exp-item">
+        <span class="exp-year">Key Project</span>
+        <div class="exp-body">
+          <h3>Student Enrollment Automation</h3>
+          <p class="exp-company">Make.com · Wix · Google Workspace · EdTech</p>
+          <p>Replaced fully manual student onboarding with a zero-touch pipeline. Make.com triggers on Wix purchase events, generates program-specific Drive folders, routes compliance documents & dispatches conditional emails by program type. Eliminated manual data entry entirely.</p>
+          <div class="exp-tags"><span>Wix</span><span>Thinkific</span><span>Skool</span><span>Shopify</span></div>
+        </div>
+      </div>
+      <div class="exp-item">
+        <span class="exp-year">Key Project</span>
+        <div class="exp-body">
+          <h3>Platform Migrations</h3>
+          <p class="exp-company">Wix + Shopify · Skool → Thinkific · SEO Preservation</p>
+          <p>End-to-end migration of web infrastructure & course architecture. URL redirect mapping preserved SEO rankings. Learner access maintained throughout LMS transition.</p>
+          <div class="exp-tags"><span>SEO</span><span>URL Mapping</span><span>LMS</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- VA role -->
+  <div class="role-section" data-roles="va">
+    <div class="exp-grid">
+      <div class="exp-item">
+        <span class="exp-year">2022–Now</span>
+        <div class="exp-body">
+          <h3>Social Media Manager / Virtual Assistant</h3>
+          <p class="exp-company">Herway Training Institute</p>
+          <p>Managed full social media presence & digital marketing for a women-focused educational brand. Executed email & SMS campaigns, content calendars, reels, graphics & multi-platform content using Canva, Photoshop & CapCut. Built & maintained WIX and Shopify websites. Provided direct executive & administrative support managing communications, vendor coordination & operational workflows.</p>
+          <div class="exp-tags"><span>Executive Support</span><span>Calendar Mgmt</span><span>SOP Authorship</span><span>Compliance</span></div>
+        </div>
+      </div>
+      <div class="exp-item">
+        <span class="exp-year">2025–Now</span>
+        <div class="exp-body">
+          <h3>AI Creative Director — Contract</h3>
+          <p class="exp-company">Luxe Eyewear Brand (Confidential)</p>
+          <p>Directed AI-generated advertising assets for a luxury eyewear label, maintaining a quiet luxury & Riviera lifestyle aesthetic across Meta, Instagram & TikTok. Developed prompt engineering frameworks governing lighting direction, lens reflections & material realism. Corrected AI rendering errors to commercial-grade standards.</p>
+          <div class="exp-tags"><span>Higgsfield</span><span>Gemini</span><span>Nano Banana</span><span>ChatGPT</span></div>
+        </div>
+      </div>
+      <div class="exp-item">
+        <span class="exp-year">2021–Now</span>
+        <div class="exp-body">
+          <h3>Independent Digital Consultant</h3>
+          <p class="exp-company">Multiple Clients</p>
+          <p>Platform migrations (Wix → Shopify, Skool → Thinkific). API auth troubleshooting (OAuth, 401, 503/500). VIP funnels & automated customer journeys via Omnisend. Technical SOPs for automated enrollment workflows.</p>
+          <div class="exp-tags"><span>Omnisend</span><span>Klaviyo</span><span>Make.com</span><span>API Troubleshooting</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- SKILLS -->
+<section id="skills">
+  <div class="section-label">// Skills & Tools</div>
+  <div class="skills-grid">
+    <div class="skill-block" data-roles="designer va automation">
+      <h4>Design & Visual</h4>
+      <ul>
+        <li>Photoshop</li><li>Illustrator</li><li>Canva</li><li>Figma</li><li>CapCut</li>
+      </ul>
+    </div>
+    <div class="skill-block" data-roles="automation va">
+      <h4>Automation & Integration</h4>
+      <ul>
+        <li>Make.com</li><li>Zapier-compatible workflows</li><li>Webhooks & conditional routing</li><li>API / OAuth troubleshooting</li><li>JSON payload mapping</li>
+      </ul>
+    </div>
+    <div class="skill-block" data-roles="automation va">
+      <h4>Platforms</h4>
+      <ul>
+        <li>Shopify</li><li>Wix</li><li>Thinkific</li><li>Skool</li><li>Google Workspace</li><li>Notion</li>
+      </ul>
+    </div>
+    <div class="skill-block" data-roles="va automation">
+      <h4>Marketing & CRM</h4>
+      <ul>
+        <li>Omnisend</li><li>Klaviyo</li><li>Mailchimp</li><li>Meta Ads</li><li>TikTok</li><li>Email & SMS campaigns</li>
+      </ul>
+    </div>
+    <div class="skill-block" data-roles="designer automation va">
+      <h4>AI Tools</h4>
+      <ul>
+        <li>ChatGPT</li><li>Gemini</li><li>Higgsfield</li><li>Nano Banana</li><li>Claude</li>
+      </ul>
+    </div>
+    <div class="skill-block" data-roles="va">
+      <h4>Executive Support</h4>
+      <ul>
+        <li>Calendar & inbox management</li><li>SOP authorship</li><li>Client communications</li><li>Compliance documentation</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- CONTACT -->
+<section id="contact">
+  <div class="section-label">// Let's Talk</div>
+  <div class="contact-inner">
+    <h2 class="contact-heading">Got a project?<br><span class="accent">Let's build it.</span></h2>
+    <p>Available for freelance, long-term embedded support & creative direction.</p>
+    <a href="mailto:sentngc@gmail.com" class="contact-btn">sentngc@gmail.com →</a>
+    <p class="contact-location">📍 La Union, Philippines · +63 933 854 8942</p>
+  </div>
+</section>
+
+<!-- CLICK COUNTER EASTER EGG -->
+<div id="easterEgg" class="easter-egg hidden">
+  <div class="egg-inner">
+    <p class="egg-count" id="eggCount">10 clicks!</p>
+    <p>You're clearly curious. Let's talk.</p>
+    <a href="mailto:sentngc@gmail.com" class="contact-btn">Drop me an email →</a>
+    <button id="eggClose">✕</button>
+  </div>
+</div>
+
+<footer>
+  <span>© 2025 Rotsen John Vonyl Taningco</span>
+  <span>Built with curiosity & late-night energy.</span>
+</footer>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="main.js"></script>
+</body>
+</html>
