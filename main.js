@@ -58,7 +58,7 @@
   let mixer = null;
   let characterGroup = null;
 
-  loader.load('https://cdn.jsdelivr.net/gh/ellalalala30-stack/rotsen-portfolio@main/character.fbx', fbx => {
+  loader.load('https://raw.githubusercontent.com/ellalalala30-stack/rotsen-portfolio/main/character.fbx', fbx => {
     fbx.scale.setScalar(1);
 
     /* Centre the model at feet level */
